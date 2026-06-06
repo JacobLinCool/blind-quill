@@ -176,7 +176,9 @@ def load_from_query(request: gr.Request) -> tuple[str, str, str, str, str, dict[
 def build_app() -> gr.Blocks:
     with gr.Blocks(title="Blind Quill") as demo:
         with gr.Column(elem_classes=["app-shell"]):
+            selected_story_id = gr.State("")
             gr.HTML(
+                "<style>" + APP_CSS + "</style>"
                 """
                 <header class="app-title">
                   <h1>Blind Quill</h1>
@@ -184,7 +186,6 @@ def build_app() -> gr.Blocks:
                 </header>
                 """
             )
-            selected_story_id = gr.State("")
 
             with gr.Tab("Browse Hidden Manuscripts"):
                 gallery_dropdown = gr.Dropdown(label="Choose a manuscript", choices=[], interactive=True)
@@ -297,5 +298,8 @@ def _error_html(exc: Exception) -> str:
     return f'<section class="capsule"><p><strong>Error:</strong> {escape(message)}</p></section>'
 
 
+demo = build_app().queue(default_concurrency_limit=1)
+
+
 if __name__ == "__main__":
-    build_app().queue(default_concurrency_limit=1).launch(css=APP_CSS)
+    demo.launch()

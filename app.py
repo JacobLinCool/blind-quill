@@ -17,27 +17,111 @@ from utils import InputValidationError, validate_fragment, validate_story_id
 
 APP_CSS = """
 .gradio-container {
+  color-scheme: light;
+  --body-background-fill: #f5eddc !important;
+  --body-text-color: #221b14 !important;
+  --body-text-color-subdued: #5e5145 !important;
+  --block-background-fill: rgba(255, 250, 239, 0.94) !important;
+  --block-border-color: #d3bea0 !important;
+  --block-info-text-color: #5e5145 !important;
+  --block-label-background-fill: #fff6e8 !important;
+  --block-label-border-color: #d3bea0 !important;
+  --block-label-text-color: #221b14 !important;
+  --input-background-fill: #fffaf0 !important;
+  --input-border-color: #b9a17f !important;
+  --input-placeholder-color: #7b6a55 !important;
+  --input-text-color: #221b14 !important;
+  --button-primary-background-fill: #4a4038 !important;
+  --button-primary-background-fill-hover: #5b4d42 !important;
+  --button-primary-border-color: #4a4038 !important;
+  --button-primary-text-color: #fff8e8 !important;
+  --button-secondary-background-fill: #4a4038 !important;
+  --button-secondary-background-fill-hover: #5b4d42 !important;
+  --button-secondary-border-color: #4a4038 !important;
+  --button-secondary-text-color: #fff8e8 !important;
   background:
     linear-gradient(90deg, rgba(90, 61, 31, 0.05) 1px, transparent 1px),
     linear-gradient(180deg, rgba(90, 61, 31, 0.04) 1px, transparent 1px),
     #f5eddc;
   background-size: 28px 28px;
-  color: #221b14;
+  color: #221b14 !important;
 }
 .app-shell { max-width: 1120px; margin: 0 auto; }
-.app-title h1 { margin-bottom: 0.2rem; font-size: 2rem; }
-.app-title p { margin-top: 0; color: #5e5145; }
+.gradio-container .app-shell {
+  color: #221b14 !important;
+}
+.gradio-container .app-shell :where(h1, h2, h3, h4, p, li, label, span, div) {
+  color: #221b14 !important;
+}
+.gradio-container .app-shell :where(input, textarea, select),
+.gradio-container .app-shell :where([role="textbox"], [role="combobox"], [role="listbox"]) {
+  background: #fffaf0 !important;
+  border-color: #b9a17f !important;
+  color: #221b14 !important;
+}
+.gradio-container .app-shell .form {
+  background: #fffaf0 !important;
+  color: #221b14 !important;
+}
+.gradio-container .app-shell input::placeholder,
+.gradio-container .app-shell textarea::placeholder {
+  color: #7b6a55 !important;
+  opacity: 1 !important;
+}
+.gradio-container .app-shell :where(button) {
+  background: #4a4038 !important;
+  border-color: #4a4038 !important;
+  color: #fff8e8 !important;
+}
+.gradio-container .app-shell button :where(span, div, p) {
+  color: #fff8e8 !important;
+}
+.gradio-container .app-shell :where(button:hover) {
+  background: #5b4d42 !important;
+  border-color: #5b4d42 !important;
+}
+.gradio-container .app-shell :where(button[role="tab"], [role="tab"]) {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: #5e5145 !important;
+}
+.gradio-container .app-shell :where(button[role="tab"], [role="tab"]) :where(span, div, p) {
+  color: #5e5145 !important;
+}
+.gradio-container .app-shell :where(button[role="tab"][aria-selected="true"], [role="tab"][aria-selected="true"]) {
+  border-bottom-color: #c26132 !important;
+  color: #8a3f18 !important;
+}
+.gradio-container .app-shell :where(button[role="tab"][aria-selected="true"], [role="tab"][aria-selected="true"]) :where(span, div, p) {
+  color: #8a3f18 !important;
+}
+.gradio-container .app-shell :where(a) {
+  color: #7a3515 !important;
+}
+.gradio-container .app-shell .app-title h1 { margin-bottom: 0.2rem; font-size: 2rem; color: #221b14 !important; }
+.gradio-container .app-shell .app-title p { margin-top: 0; color: #5e5145 !important; }
 .capsule, .reveal, .full-story, .gallery-card {
   border: 1px solid #d3bea0;
   border-radius: 8px;
   background: rgba(255, 250, 239, 0.88);
   box-shadow: 0 1px 0 rgba(60, 41, 20, 0.06);
+  color: #221b14 !important;
 }
 .capsule, .reveal, .full-story { padding: 18px; }
 .capsule h2, .chapter h3, .gallery-card h3 { margin-bottom: 0.2rem; }
 .capsule h3 { margin: 1rem 0 0.2rem; font-size: 1rem; }
-.meta, .progress, .story-code, .chapter-summary { color: #6f5f4c; }
-.story-code code { background: #efe1c8; border-radius: 4px; padding: 2px 5px; }
+.capsule :where(h2, h3, p, li, strong),
+.full-story :where(h3, p),
+.gallery-card :where(h3, p) {
+  color: #221b14 !important;
+}
+.gradio-container .app-shell :where(.meta, .progress, .story-code, .chapter-summary) { color: #6f5f4c !important; }
+.story-code code {
+  background: #efe1c8 !important;
+  border-radius: 4px;
+  color: #4b321d !important;
+  padding: 2px 5px;
+}
 .status-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .badge {
   border-radius: 999px;
@@ -46,8 +130,8 @@ APP_CSS = """
   font-weight: 700;
   letter-spacing: 0;
 }
-.badge.open { background: #d9ead3; color: #214b26; }
-.badge.sealed { background: #ead7d3; color: #6c2b22; }
+.badge.open { background: #d9ead3 !important; color: #214b26 !important; }
+.badge.sealed { background: #ead7d3 !important; color: #6c2b22 !important; }
 .gallery-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -65,15 +149,19 @@ APP_CSS = """
   border-left: 4px solid #a97817;
   padding: 10px 12px;
   border-radius: 6px;
+  color: #221b14 !important;
 }
 .reveal {
-  background: #2f261d;
-  color: #fff8e8;
-  border-color: #2f261d;
+  background: #2f261d !important;
+  color: #fff8e8 !important;
+  border-color: #2f261d !important;
 }
-.reveal .meta { color: #dfc9a9; }
+.gradio-container .app-shell .reveal :where(p, span, div, strong) {
+  color: #fff8e8 !important;
+}
+.gradio-container .app-shell .reveal .meta { color: #dfc9a9 !important; }
 .reveal-line { font-size: 1.15rem; font-weight: 700; }
-.empty-state { color: #6f5f4c; }
+.empty-state { color: #6f5f4c !important; }
 textarea { font-family: inherit; }
 """
 

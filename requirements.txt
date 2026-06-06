@@ -1,0 +1,7 @@
+gradio>=6.0,<7
+transformers
+accelerate
+safetensors
+torch
+pydantic>=2
+filelock

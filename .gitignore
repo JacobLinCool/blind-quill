@@ -157,6 +157,11 @@ dmypy.json
 # pytype static type analyzer
 .pytype/
 
+# Blind Quill runtime data
+data/stories.json
+data/stories.json.lock
+data/stories.json.tmp
+
 # Cython debug symbols
 cython_debug/
 

@@ -3,6 +3,7 @@ transformers
 accelerate
 safetensors
 torch
+torchvision
 pydantic>=2
 filelock
 spaces

@@ -150,6 +150,26 @@ class PublicCapsulePatch(StrictModel):
     visible_characters: list[VisibleCharacter]
     open_questions: list[NonEmptyStr] = Field(max_length=3)
 
+    @field_validator("short_summary")
+    @classmethod
+    def summary_must_be_player_facing_story_copy(cls, value: str) -> str:
+        lowered = value.casefold()
+        disallowed = (
+            "player",
+            "fragment",
+            "graft",
+            "placement",
+            "rationale",
+            "editorial",
+            "this moment",
+            "opportunity to introduce",
+            "remains unexplored",
+        )
+        for phrase in disallowed:
+            if phrase in lowered:
+                raise ValueError("public capsule summary must be story-facing copy, not editorial rationale.")
+        return value
+
     @field_validator("open_questions", mode="before")
     @classmethod
     def keep_first_three_open_questions(cls, value):

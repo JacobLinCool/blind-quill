@@ -124,7 +124,7 @@ Return ONLY this JSON object:
   "editor_rationale_for_player": "Why this placement makes story sense, without exposing hidden notes.",
   "updated_chapter_summary": "string",
   "public_capsule_patch": {{
-    "short_summary": "updated <= 600 chars",
+    "short_summary": "updated story-facing public summary <= 600 chars",
     "visible_characters": [
       {{"name": "string", "one_line_description": "string"}}
     ],
@@ -149,6 +149,8 @@ Patch-writing rules:
 - Do not contradict world bible facts unless the fragment is intentionally a revelation, and even then make it coherent.
 - Keep replacement_paragraphs to 1 to 3 paragraphs.
 - Use empty arrays when the world bible has no additions or resolutions.
+- public_capsule_patch.short_summary must be a public story summary only. Do not mention the player, fragment, graft, placement, target paragraph, editing opportunity, rationale, continuity risks, or why this was a good place to insert the contribution.
+- Put placement explanations only in editor_rationale_for_player.
 """
     return [_text_message("system", SYSTEM_PROMPT), _text_message("user", prompt)]
 

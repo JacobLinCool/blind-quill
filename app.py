@@ -270,7 +270,7 @@ def build_app() -> gr.Blocks:
                 """
                 <header class="app-title">
                   <h1>Blind Quill</h1>
-                  <p>A hidden-canon story grafting game.</p>
+                  <p>Choose a manuscript, read only its public capsule, add a fragment, and reveal how it is grafted into the hidden canon.</p>
                 </header>
                 """
             )

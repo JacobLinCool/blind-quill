@@ -1,7 +1,10 @@
 ---
 title: Blind Quill
 sdk: gradio
+sdk_version: 6.16.0
 app_file: app.py
+python_version: "3.12"
+suggested_hardware: zero-a10g
 license: mit
 ---
 
@@ -38,6 +41,7 @@ The tests cover JSON/thinking cleanup, deterministic patch application, graft se
 
 - Uses one model: `Qwen/Qwen3.5-2B`.
 - Uses the Transformers `AutoProcessor` and `AutoModelForImageTextToText` path.
+- Wraps model generation in `@spaces.GPU(duration=300)` when running on ZeroGPU.
 - Does not set `temperature`, `top_p`, `top_k`, or other sampling controls.
 - Keeps Qwen thinking mode enabled by default.
 - Strips `<think>...</think>` before JSON parsing, storage, or UI rendering.

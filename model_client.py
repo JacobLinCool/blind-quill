@@ -16,6 +16,17 @@ SchemaT = TypeVar("SchemaT", bound=BaseModel)
 _processor = None
 _model = None
 
+try:
+    import spaces
+except ImportError:
+    spaces = None
+
+
+def _gpu(duration: int):
+    if spaces is None:
+        return lambda function: function
+    return spaces.GPU(duration=duration)
+
 
 class ModelClientError(RuntimeError):
     pass
@@ -44,6 +55,7 @@ def generate_json(
             raise ModelClientError(f"Model did not return valid {schema_name} JSON.") from repair_error
 
 
+@_gpu(duration=300)
 def generate_text(messages: list[dict[str, Any]], max_new_tokens: int = 8192) -> str:
     processor, model = load_model()
     inputs = processor.apply_chat_template(

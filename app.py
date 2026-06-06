@@ -298,4 +298,4 @@ def _error_html(exc: Exception) -> str:
 
 
 if __name__ == "__main__":
-    build_app().launch(css=APP_CSS)
+    build_app().queue(default_concurrency_limit=1).launch(css=APP_CSS)

@@ -5,3 +5,4 @@ safetensors
 torch
 pydantic>=2
 filelock
+spaces

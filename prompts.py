@@ -153,11 +153,19 @@ Patch-writing rules:
     return [_text_message("system", SYSTEM_PROMPT), _text_message("user", prompt)]
 
 
-def build_repair_json_messages(raw: str, schema_name: str, schema_contract: str) -> list[dict[str, Any]]:
+def build_repair_json_messages(
+    raw: str,
+    schema_name: str,
+    schema_contract: str,
+    validation_error: str,
+) -> list[dict[str, Any]]:
     prompt = f"""The previous response was not valid JSON for schema {schema_name}.
 
 Schema contract:
 {schema_contract}
+
+Validation or parsing error:
+{validation_error}
 
 Previous response after thinking text was removed:
 {raw}

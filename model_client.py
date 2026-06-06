@@ -42,11 +42,12 @@ def generate_json(
     cleaned = strip_thinking(raw)
     try:
         return _validate_json(cleaned, schema_model)
-    except (json.JSONDecodeError, ValueError, ValidationError):
+    except (json.JSONDecodeError, ValueError, ValidationError) as first_error:
         repair_messages = build_repair_json_messages(
             cleaned,
             schema_name,
             json.dumps(schema_model.model_json_schema(), ensure_ascii=False, indent=2),
+            str(first_error),
         )
         repaired = strip_thinking(generate_text(repair_messages, max_new_tokens=4096))
         try:

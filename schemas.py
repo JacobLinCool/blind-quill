@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator, model_validator
 
 
 NonEmptyStr = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
@@ -26,6 +26,11 @@ class PublicCapsule(StrictModel):
     short_summary: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=600)]
     visible_characters: list[VisibleCharacter] = Field(default_factory=list)
     open_questions: list[NonEmptyStr] = Field(default_factory=list, max_length=3)
+
+    @field_validator("open_questions", mode="before")
+    @classmethod
+    def keep_first_three_open_questions(cls, value):
+        return _limit_list(value, 3)
 
 
 class CharacterFact(StrictModel):
@@ -145,6 +150,11 @@ class PublicCapsulePatch(StrictModel):
     visible_characters: list[VisibleCharacter]
     open_questions: list[NonEmptyStr] = Field(max_length=3)
 
+    @field_validator("open_questions", mode="before")
+    @classmethod
+    def keep_first_three_open_questions(cls, value):
+        return _limit_list(value, 3)
+
 
 class WorldBiblePatch(StrictModel):
     rules_to_add: list[NonEmptyStr]
@@ -172,3 +182,9 @@ class AppliedPatchResult(StrictModel):
     graft_record: GraftRecord
     target_chapter_title: NonEmptyStr
     highlight_paragraph_ids: list[NonEmptyStr]
+
+
+def _limit_list(value, max_items: int):
+    if isinstance(value, list):
+        return value[:max_items]
+    return value

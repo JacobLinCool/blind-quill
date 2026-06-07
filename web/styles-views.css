@@ -421,6 +421,13 @@
 
 .stage__quill { width: 56px; height: 56px; margin: 0 auto 30px; color: var(--gilt); animation: flicker 3.4s ease-in-out infinite; }
 
+/* real streaming progress (local CPU/MPS runs) */
+.bq-progress { width: min(440px, 86vw); margin: 0 auto 26px; }
+.bq-progress__track { height: 4px; border-radius: 4px; background: rgba(138,124,99,.22); overflow: hidden; }
+.bq-progress__fill { height: 100%; border-radius: 4px; background: var(--thread); box-shadow: 0 0 10px var(--thread-glow); }
+.bq-progress__meta { display: flex; justify-content: space-between; gap: 12px; margin-top: 9px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--bone-faint); }
+.bq-progress__notice { margin-top: 11px; font-size: 12px; line-height: 1.5; color: var(--bone-faint); text-align: center; }
+
 /* the veiled doc the editor scans */
 .scan-doc { display: grid; gap: 13px; max-width: 440px; margin: 0 auto 8px; text-align: left; }
 .scan-line { height: .7em; border-radius: 2px; background: rgba(138,124,99,.22); position: relative; overflow: hidden; }

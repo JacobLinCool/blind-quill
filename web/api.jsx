@@ -42,6 +42,40 @@ function bqErrorMessage(err) {
   return "The bindery did not answer. Try again.";
 }
 
+// Call a streaming generator endpoint. The editor yields { type: "progress" }
+// events while it works and a final { type: "result" } event. Progress events
+// are forwarded to onProgress; the result is returned. Some runs (ZeroGPU) emit
+// only a coarse start event, so the UI must tolerate sparse progress.
+async function bqStream(name, payload, onProgress) {
+  const client = await bqClient();
+  let stream;
+  try {
+    stream = client.submit("/" + name, payload || {});
+  } catch (err) {
+    throw new Error(bqErrorMessage(err));
+  }
+  let result = null;
+  try {
+    for await (const msg of stream) {
+      if (msg.type === "data") {
+        const item = msg.data && msg.data[0];
+        if (!item) continue;
+        if (item.type === "progress") {
+          if (onProgress) { try { onProgress(item); } catch (_e) { /* progress is best-effort */ } }
+        } else if (item.type === "result") {
+          result = item;
+        }
+      } else if (msg.type === "status" && msg.stage === "error") {
+        throw new Error(bqErrorMessage(msg.message || msg));
+      }
+    }
+  } catch (err) {
+    throw new Error(bqErrorMessage(err));
+  }
+  if (!result) throw new Error("The bindery did not finish the stitch. Try again.");
+  return result;
+}
+
 const BQ = {
   // Gallery: capsule-level cards only (no hidden chapters).
   listStories: () => bqCall("list_stories", {}).then((r) => (r && r.stories) || []),
@@ -49,8 +83,9 @@ const BQ = {
   getCapsule: (story_id) => bqCall("get_capsule", { story_id }).then((r) => r && r.story),
   // Create from a seed; the creator receives the full manuscript.
   createStory: (seed) => bqCall("create_story", { seed }).then((r) => r && r.story),
-  // Stitch a fragment: { story (full, updated), reveal: { revealLine, rationale, targetLabel, highlightIds } }.
-  stitch: (story_id, fragment) => bqCall("stitch", { story_id, fragment }),
+  // Stitch a fragment (streaming): forwards { type:"progress", ... } events to
+  // onProgress and resolves with { story (full, updated), reveal: {...} }.
+  stitch: (story_id, fragment, onProgress) => bqStream("stitch", { story_id, fragment }, onProgress),
   // Read a manuscript end to end. The UI warns first when the reader has not contributed.
   readManuscript: (story_id) => bqCall("read_manuscript", { story_id }).then((r) => r && r.story),
 };

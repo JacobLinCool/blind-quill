@@ -53,12 +53,48 @@ The app is a custom frontend served by a Gradio Server backend.
 - `app.py` exposes queued API endpoints and serves `web/`.
 - `core.py` owns create, browse, stitch, and read orchestration.
 - `story_store.py` owns JSON persistence and file locking.
-- `model_client.py` loads `Qwen/Qwen3.5-2B`, runs generation, strips thinking
-  blocks, and validates JSON.
+- `model_client.py` loads `Qwen/Qwen3.5-2B`, resolves the execution device,
+  runs generation, strips thinking blocks, and validates JSON.
 - `patcher.py` applies model patches deterministically.
 - `presenter.py` maps backend story objects into frontend view models.
+- `observability.py` configures logging and a lightweight per-run profiler.
 - `web/` contains the production React frontend loaded through Babel in the
   Space page.
+
+## Execution and Progress
+
+`BQ_DEVICE` (`auto` | `zerogpu` | `cuda` | `mps` | `cpu`) selects the base
+backend; `auto` prefers ZeroGPU on a Space, then CUDA, MPS, and CPU.
+
+ZeroGPU quota is per visitor and only known at request time, so device selection
+cannot be purely static. The flow is:
+
+- `app.py` attempts each ZeroGPU stitch synchronously on the request thread —
+  ZeroGPU bills against the Gradio request context, which a worker thread would
+  not carry. ZeroGPU runs the function in a forked subprocess, so its arguments
+  are pickled and it cannot stream token callbacks back.
+- If ZeroGPU raises a per-user quota error (`spaces` raises `gradio.Error` with a
+  "quota exceeded" / "credits exceeded" message), `app.py` retries the stitch
+  with `force_cpu=True`. `model_client.generate_text` then runs in-process on the
+  CPU-resident model instead of the GPU worker.
+- In-process runs (local CUDA/MPS/CPU, or the CPU fallback) execute through
+  `_stream_stitch`, which runs `core.stitch` on a worker thread and drains its
+  `on_progress` callback through a queue into the endpoint's yields. A worker
+  thread is safe here only because no `@spaces.GPU` call is involved.
+- `core.stitch` accepts an optional `on_progress` callback and a `force_cpu`
+  flag, reports stage and token progress, and still returns an
+  `AppliedPatchResult` synchronously so tests and callers are unaffected.
+- The frontend consumes the stream with the Gradio JS client's `submit` and
+  shows stage, percentage, ETA, and a fallback note, dropping back to the staged
+  animation for fast GPU runs that emit no token progress.
+
+## Observability
+
+Logging and profiling write to stderr only, never the UI. `observability.py`
+configures the `blind_quill` logger (level via `BQ_LOG_LEVEL`, default `INFO`).
+Each stitch logs messages processed, total and per-stage timings, and a
+best-effort resource snapshot (process memory, CPU, and GPU/MPS memory when
+available); a missing metric is omitted rather than raising.
 
 ## Model Policy
 
@@ -69,7 +105,8 @@ The app is a custom frontend served by a Gradio Server backend.
 - `<think>...</think>` content is stripped before parsing, storage, prompts, or
   UI display.
 - Generation does not manually tune sampling controls.
-- ZeroGPU runs use `spaces.GPU(duration=300)`.
+- ZeroGPU runs use `spaces.GPU(duration=300)`; CUDA, MPS, and CPU runs call the
+  model directly. The backend is chosen by `BQ_DEVICE`.
 
 ## Environment
 
@@ -89,7 +126,7 @@ generated from `uv.lock`.
 Required checks before deployment:
 
 ```bash
-uv run python -m compileall app.py core.py model_client.py patcher.py presenter.py prompts.py schemas.py story_store.py utils.py tests
+uv run python -m compileall app.py core.py model_client.py observability.py patcher.py presenter.py prompts.py schemas.py story_store.py utils.py tests
 uv run python -m unittest discover -s tests -v
 ```
 

@@ -130,9 +130,10 @@ function App() {
   const stitch = (fragment) => {
     if (!active) return;
     setDraft(fragment);
-    setPending({ fragment, graft: null, story: null, error: null });
+    setPending({ fragment, graft: null, story: null, error: null, progress: null });
     setView("reveal");
-    BQ.stitch(active.id, fragment)
+    const onProgress = (p) => setPending((prev) => (prev ? { ...prev, progress: p } : prev));
+    BQ.stitch(active.id, fragment, onProgress)
       .then((res) => setPending((p) => (p ? { ...p, graft: res.reveal, story: res.story } : p)))
       .catch((err) => setPending((p) => (p ? { ...p, error: (err && err.message) || "The bindery could not stitch this fragment." } : p)));
   };
@@ -202,6 +203,7 @@ function App() {
           fragment={pending.fragment}
           graft={pending.graft}
           error={pending.error}
+          progress={pending.progress}
           onReadManuscript={commitAndRead}
           onBindery={revealToBindery}
           onRetry={retryFragment}

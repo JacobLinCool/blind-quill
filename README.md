@@ -66,6 +66,36 @@ Persistent story data is stored at:
 - `/data`, when it exists on Hugging Face Spaces
 - `./data/stories.json`, otherwise
 
+### Execution backend
+
+`BQ_DEVICE` selects where generation runs.
+
+| `BQ_DEVICE` | Behaviour |
+| --- | --- |
+| `auto` (default) | ZeroGPU on a Space with the `spaces` runtime, else CUDA, else Apple MPS, else CPU. |
+| `zerogpu` | Hugging Face ZeroGPU (`@spaces.GPU`), with automatic CPU fallback (below). |
+| `cuda` | Local NVIDIA GPU via `device_map="auto"`. |
+| `mps` | Apple Silicon GPU (Metal); falls back to float32 if float16 fails. |
+| `cpu` | CPU only — slow but needs no accelerator or quota. |
+
+**Per-user ZeroGPU fallback.** ZeroGPU quota is per visitor, not per Space owner,
+and is only known at request time. So on a ZeroGPU Space each stitch is attempted
+on the GPU; if the visitor's quota is spent, the request is transparently re-run
+on CPU instead of failing. No configuration or sign-in is required to keep using
+the app — it just gets slower.
+
+**Progress.** Because CPU/MPS runs are slow, the `stitch` endpoint streams real
+progress (stage, percentage, ETA — and a note when a fallback happens) to the
+reveal screen. Fast GPU runs keep the original staged animation, since ZeroGPU's
+forked generation cannot stream token callbacks back across the process boundary.
+
+### Logging
+
+Set `BQ_LOG_LEVEL` (default `INFO`; use `DEBUG` for per-stage detail). Logs go to
+stderr only — never the UI — and record messages processed, total and per-stage
+timings, and a best-effort resource snapshot (process memory, CPU, and GPU/MPS
+memory when available).
+
 ## Requirements
 
 `requirements.txt` is generated from `uv.lock` for Hugging Face Spaces:
@@ -80,19 +110,21 @@ export again.
 ## Test
 
 ```bash
-uv run python -m compileall app.py core.py model_client.py patcher.py presenter.py prompts.py schemas.py story_store.py utils.py tests
+uv run python -m compileall app.py core.py model_client.py observability.py patcher.py presenter.py prompts.py schemas.py story_store.py utils.py tests
 uv run python -m unittest discover -s tests -v
 ```
 
 The tests cover JSON/thinking cleanup, deterministic patch application, graft
 sealing, stale-write rejection, the blinded capsule flow, the warned read escape
-door, and the create-then-stitch flow. They do not download model weights.
+door, the create-then-stitch flow, device resolution, the resource snapshot, and
+the streamed stitch progress events. They do not download model weights.
 
 ## Model Policy
 
 - Uses one model: `Qwen/Qwen3.5-2B`.
 - Uses the Transformers `AutoProcessor` and `AutoModelForImageTextToText` path.
-- Wraps model generation in `@spaces.GPU(duration=300)` when running on ZeroGPU.
+- Wraps model generation in `@spaces.GPU(duration=300)` on ZeroGPU; runs directly
+  on CUDA, MPS, or CPU otherwise (selected by `BQ_DEVICE`).
 - Does not set `temperature`, `top_p`, `top_k`, or other sampling controls.
 - Keeps Qwen thinking mode enabled by default.
 - Strips `<think>...</think>` before JSON parsing, storage, prompting, or UI

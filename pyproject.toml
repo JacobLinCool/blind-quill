@@ -8,6 +8,7 @@ dependencies = [
   "accelerate",
   "filelock",
   "gradio[oauth,mcp]==6.16.0",
+  "psutil",
   "pydantic>=2",
   "safetensors",
   "spaces",

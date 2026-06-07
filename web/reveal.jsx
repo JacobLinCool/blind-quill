@@ -11,10 +11,15 @@
 
 const { useState: useStateR, useEffect: useEffectR } = React;
 
-function RevealStage({ fragment, graft, error, onReadManuscript, onBindery, onRetry }) {
+function RevealStage({ fragment, graft, error, progress, onReadManuscript, onBindery, onRetry }) {
   const [phase, setPhase] = useStateR("reading"); // reading | choosing | stitching | revealed | error
   const SCAN_LINES = 9;
   const targetLine = 5;
+
+  // Token-level progress (local CPU/MPS) carries tokensTotal and drives the real
+  // bar + ETA. ZeroGPU sends only a coarse start event (no tokensTotal), so we
+  // fall back to the staged intro animation below.
+  const hasRealProgress = !!(progress && progress.tokensTotal != null);
 
   // Intro beats. We never auto-advance past "stitching" — the reveal waits for
   // the real graft so a slow editor keeps stitching rather than lying about a result.
@@ -39,13 +44,28 @@ function RevealStage({ fragment, graft, error, onReadManuscript, onBindery, onRe
     return () => clearTimeout(t);
   }, [graft, error]);
 
-  const phaseLabel = {
-    reading: "The editor is reading the hidden manuscript",
-    choosing: "Choosing where it belongs",
-    stitching: "Stitching your fragment into the canon",
-    revealed: "Grafted",
-    error: "The stitch slipped",
-  }[phase];
+  // While the editor works, let real progress override the timed intro phase so
+  // the visuals track what the backend is actually doing. revealed/error always
+  // win (set by the effects above).
+  const activePhase =
+    phase === "revealed" || phase === "error"
+      ? phase
+      : hasRealProgress && progress.phase
+      ? progress.phase
+      : phase;
+
+  const phaseLabel = hasRealProgress && progress.label
+    ? progress.label
+    : {
+        reading: "The editor is reading the hidden manuscript",
+        choosing: "Choosing where it belongs",
+        stitching: "Stitching your fragment into the canon",
+        revealed: "Grafted",
+        error: "The stitch slipped",
+      }[activePhase];
+
+  const pct = hasRealProgress ? Math.round(Math.max(0, Math.min(1, progress.fraction)) * 100) : 0;
+  const etaText = hasRealProgress && progress.etaSeconds != null ? formatEta(progress.etaSeconds) : "";
 
   const reveal = graft ? parseReveal(graft.revealLine) : { before: "", emph: "", after: "" };
 
@@ -53,32 +73,47 @@ function RevealStage({ fragment, graft, error, onReadManuscript, onBindery, onRe
     <div className="stage">
       <div className="bq-grain" style={{ position: "absolute", inset: 0, opacity: .4 }} />
       <div className="stage__inner">
-        <span className="stage__quill" style={{ opacity: phase === "revealed" ? 0 : 1, transition: "opacity .5s", height: phase === "revealed" ? 0 : 56, marginBottom: phase === "revealed" ? 0 : 30 }}>
-          {phase !== "revealed" && <Icon name="quill" size={52} />}
+        <span className="stage__quill" style={{ opacity: activePhase === "revealed" ? 0 : 1, transition: "opacity .5s", height: activePhase === "revealed" ? 0 : 56, marginBottom: activePhase === "revealed" ? 0 : 30 }}>
+          {activePhase !== "revealed" && <Icon name="quill" size={52} />}
         </span>
 
-        {phase !== "revealed" && (
+        {activePhase !== "revealed" && (
           <div className="stage__phase">
-            {phaseLabel}{phase !== "error" && <span className="cursor">▍</span>}
+            {phaseLabel}{activePhase !== "error" && <span className="cursor">▍</span>}
+          </div>
+        )}
+
+        {/* Real progress: a bar, percentage, step, and ETA so a slow local run
+            tells the reader what is happening and how much is left. */}
+        {hasRealProgress && activePhase !== "revealed" && activePhase !== "error" && (
+          <div className="bq-progress">
+            <div className="bq-progress__track">
+              <div className="bq-progress__fill" style={{ width: pct + "%", transition: "width .3s var(--ease-out)" }} />
+            </div>
+            <div className="bq-progress__meta">
+              <span>Step {progress.stageIndex}/{progress.stageTotal} · {pct}%</span>
+              {etaText && <span>about {etaText} left</span>}
+            </div>
+            {progress.notice && <div className="bq-progress__notice">{progress.notice}</div>}
           </div>
         )}
 
         {/* The veiled doc being scanned */}
-        {(phase === "reading" || phase === "choosing") && (
+        {(activePhase === "reading" || activePhase === "choosing") && (
           <div className="scan-doc">
             {Array.from({ length: SCAN_LINES }).map((_, i) => {
-              const isTarget = phase === "choosing" && i === targetLine;
+              const isTarget = activePhase === "choosing" && i === targetLine;
               return (
                 <div
                   key={i}
                   className={"scan-line" + (isTarget ? " is-target" : "")}
                   style={{
                     width: (62 + ((i * 41) % 33)) + "%",
-                    opacity: phase === "choosing" ? (i === targetLine ? 1 : .28) : 1,
+                    opacity: activePhase === "choosing" ? (i === targetLine ? 1 : .28) : 1,
                     transition: "opacity .5s",
                   }}
                 >
-                  {phase === "reading" && <span className="scan-sweep" style={{ animationDelay: (i * 0.12) + "s" }} />}
+                  {activePhase === "reading" && <span className="scan-sweep" style={{ animationDelay: (i * 0.12) + "s" }} />}
                 </div>
               );
             })}
@@ -86,7 +121,7 @@ function RevealStage({ fragment, graft, error, onReadManuscript, onBindery, onRe
         )}
 
         {/* Stitching: the fragment lands + a stitch draws under it (loops until the editor answers) */}
-        {phase === "stitching" && (
+        {activePhase === "stitching" && (
           <div style={{ animation: "fadeUp .5s var(--ease-out)" }}>
             <div className="frag-card" style={{ animation: "fadeUp .5s var(--ease-out), glowPulse 1.6s var(--ease-out)" }}>
               "{fragment.length > 160 ? fragment.slice(0, 157) + "…" : fragment}"
@@ -107,7 +142,7 @@ function RevealStage({ fragment, graft, error, onReadManuscript, onBindery, onRe
         )}
 
         {/* The reveal */}
-        {phase === "revealed" && graft && (
+        {activePhase === "revealed" && graft && (
           <div className="stagger" style={{ display: "grid", justifyItems: "center", gap: 0 }}>
             <div className="eyebrow" style={{ color: "var(--thread-hi)", marginBottom: 22 }}>Your fragment found its place</div>
             <h2 className="reveal-line">
@@ -123,7 +158,7 @@ function RevealStage({ fragment, graft, error, onReadManuscript, onBindery, onRe
         )}
 
         {/* The fragment could not be stitched */}
-        {phase === "error" && (
+        {activePhase === "error" && (
           <div className="stagger" style={{ display: "grid", justifyItems: "center", gap: 0 }}>
             <h2 className="reveal-line">{error}</h2>
             <p className="reveal-rationale">Your fragment was kept. You can try the stitch again, or step back to the capsule.</p>
@@ -136,6 +171,15 @@ function RevealStage({ fragment, graft, error, onReadManuscript, onBindery, onRe
       </div>
     </div>
   );
+}
+
+// Human-friendly ETA: seconds → "8s" or "1m 12s".
+function formatEta(seconds) {
+  const s = Math.max(0, Math.round(seconds));
+  if (s < 60) return s + "s";
+  const m = Math.floor(s / 60);
+  const rem = s % 60;
+  return rem ? m + "m " + rem + "s" : m + "m";
 }
 
 // Split "...Chapter II, just before X." (or "Chapter 2") so the chapter clause

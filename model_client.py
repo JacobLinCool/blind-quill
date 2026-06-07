@@ -98,7 +98,13 @@ def generate_json(
     # reach, so token progress only applies in-process (local, or a CPU fallback).
     on_gpu = execution_mode() == "zerogpu" and not force_cpu
     effective_step = None if on_gpu else on_step
-    raw = generate_text(messages, max_new_tokens=max_new_tokens, on_step=effective_step, force_cpu=force_cpu)
+    raw = generate_text(
+        messages,
+        max_new_tokens=max_new_tokens,
+        on_step=effective_step,
+        force_cpu=force_cpu,
+        json_mode=True,
+    )
     cleaned = strip_thinking(raw)
     try:
         return _validate_json(cleaned, schema_model)
@@ -110,7 +116,12 @@ def generate_json(
             str(first_error),
         )
         repaired = strip_thinking(
-            generate_text(repair_messages, max_new_tokens=4096, force_cpu=force_cpu)
+            generate_text(
+                repair_messages,
+                max_new_tokens=4096,
+                force_cpu=force_cpu,
+                json_mode=True,
+            )
         )
         try:
             return _validate_json(repaired, schema_model)
@@ -123,6 +134,7 @@ def generate_text(
     max_new_tokens: int = 8192,
     on_step: StepCallback | None = None,
     force_cpu: bool = False,
+    json_mode: bool = False,
 ) -> str:
     """Run one generation.
 
@@ -132,14 +144,15 @@ def generate_text(
     or the CPU retry) runs in-process and can stream live token progress.
     """
     if execution_mode() == "zerogpu" and not force_cpu:
-        return _generate_on_gpu(messages, max_new_tokens)
-    return _generate_in_process(messages, max_new_tokens, on_step)
+        return _generate_on_gpu(messages, max_new_tokens, json_mode)
+    return _generate_in_process(messages, max_new_tokens, on_step, json_mode)
 
 
 def _generate_in_process(
     messages: list[dict[str, Any]],
     max_new_tokens: int,
     on_step: StepCallback | None = None,
+    json_mode: bool = False,
 ) -> str:
     processor, model = load_model()
     logger = get_logger("generate")
@@ -149,6 +162,7 @@ def _generate_in_process(
         tokenize=True,
         return_dict=True,
         return_tensors="pt",
+        enable_thinking=not json_mode,
     ).to(model.device)
     input_len = int(inputs["input_ids"].shape[-1])
 
@@ -162,7 +176,7 @@ def _generate_in_process(
             **inputs,
             max_new_tokens=max_new_tokens,
             streamer=streamer,
-            # Qwen3.5 thinking mode remains enabled by default; no sampling controls are set here.
+            # Sampling controls are intentionally left to the model defaults.
         )
     elapsed = time.perf_counter() - start
 
@@ -182,9 +196,9 @@ def _generate_in_process(
 
 
 @_gpu(duration=300)
-def _generate_on_gpu(messages: list[dict[str, Any]], max_new_tokens: int) -> str:
+def _generate_on_gpu(messages: list[dict[str, Any]], max_new_tokens: int, json_mode: bool) -> str:
     # Runs inside the ZeroGPU fork: arguments are pickled, so no callbacks here.
-    return _generate_in_process(messages, max_new_tokens, on_step=None)
+    return _generate_in_process(messages, max_new_tokens, on_step=None, json_mode=json_mode)
 
 
 def _make_progress_streamer(max_new_tokens: int, on_step: StepCallback):

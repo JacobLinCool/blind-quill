@@ -126,7 +126,8 @@ the streamed stitch progress events. They do not download model weights.
 - Wraps model generation in `@spaces.GPU(duration=300)` on ZeroGPU; runs directly
   on CUDA, MPS, or CPU otherwise (selected by `BQ_DEVICE`).
 - Does not set `temperature`, `top_p`, `top_k`, or other sampling controls.
-- Keeps Qwen thinking mode enabled by default.
+- Disables Qwen thinking for schema-constrained JSON calls so the token budget is
+  spent on parseable JSON; other text generation keeps the model template default.
 - Strips `<think>...</think>` before JSON parsing, storage, prompting, or UI
   rendering.
 - Does not use embeddings, RAG, ASR, image models, or a second language model.

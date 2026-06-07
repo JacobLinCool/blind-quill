@@ -101,7 +101,9 @@ available); a missing metric is omitted rather than raising.
 - Model: `Qwen/Qwen3.5-2B`.
 - One model only.
 - No embeddings, RAG, ASR, image generation, or secondary LLM.
-- Qwen thinking mode stays enabled.
+- Qwen thinking mode is disabled for schema-constrained JSON calls so the model
+  reaches the required object before `max_new_tokens`; other text generation uses
+  the model template default.
 - `<think>...</think>` content is stripped before parsing, storage, prompts, or
   UI display.
 - Generation does not manually tune sampling controls.

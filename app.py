@@ -72,7 +72,7 @@ def build_server() -> Server:
 
     @app.api(name="read_manuscript")
     def read_manuscript(story_id: str) -> dict:
-        story = _guard(core.read_sealed, story_id)
+        story = _guard(core.read_manuscript, story_id)
         return {"story": full_story_dict(story)}
 
     app.mount("/web", StaticFiles(directory=str(WEB_DIR)), name="web")

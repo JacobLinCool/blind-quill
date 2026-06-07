@@ -121,6 +121,7 @@
 .capsule__genre { font-family: var(--mono); font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gilt-deep); margin-bottom: 22px; }
 .capsule__summary { font-size: 19px; line-height: 1.62; color: var(--ink-soft); border-left: 2px solid var(--thread); padding-left: 18px; margin-bottom: 30px; }
 .capsule__sub { font-family: var(--mono); font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-faint); margin: 0 0 12px; }
+.capsule-actions { display: flex; gap: 12px; flex-wrap: wrap; }
 
 .char-list { display: grid; gap: 10px; margin-bottom: 28px; }
 .char {
@@ -151,6 +152,71 @@
 .veil-block { display: grid; gap: 7px; }
 .veil-block .h { height: .8em; width: 42%; border-radius: 2px; background: rgba(196,154,74,.32); }
 .veil-panel__note { margin-top: 22px; font-family: var(--mono); font-size: 11px; color: var(--bone-faint); letter-spacing: .08em; line-height: 1.7; text-align: center; }
+
+.read-warning {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+}
+.read-warning__scrim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(12,9,5,.68);
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+}
+.read-warning__panel {
+  position: relative;
+  width: min(520px, 100%);
+  display: grid;
+  gap: 16px;
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--r-lg);
+  background: var(--paper-hi);
+  color: var(--ink);
+  padding: clamp(24px, 5vw, 34px);
+  box-shadow: 0 34px 90px -42px rgba(0,0,0,.75);
+}
+.read-warning__eyebrow {
+  color: var(--thread);
+  letter-spacing: .22em;
+}
+.read-warning__panel h2 {
+  font-size: clamp(24px, 4vw, 32px);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  margin: 0;
+  text-wrap: balance;
+}
+.read-warning__panel p {
+  color: var(--ink-soft);
+  font-size: 16px;
+  line-height: 1.58;
+  margin: 0;
+}
+.read-warning__actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+@media (max-width: 520px) {
+  .capsule-actions,
+  .read-warning__actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .capsule-actions .btn,
+  .read-warning__actions .btn {
+    justify-content: center;
+    width: 100%;
+  }
+}
 
 /* ===================== Composer ===================== */
 .composer { max-width: 720px; margin: 0 auto; }

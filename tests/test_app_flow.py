@@ -18,7 +18,6 @@ from schemas import (
     WorldBible,
     WorldBiblePatch,
 )
-from utils import InputValidationError
 
 
 def initial_payload():
@@ -104,9 +103,10 @@ class AppFlowTests(unittest.TestCase):
                 self.assertTrue(any(item.story_id == story_id for item in core.gallery()))
                 self.assertNotIn("chapters", card_dict(core.capsule(story_id)))
 
-                # An open manuscript cannot be read whole before being changed.
-                with self.assertRaises(InputValidationError):
-                    core.read_sealed(story_id)
+                # The escape door can reveal an open manuscript without adding a graft.
+                unmodified_full = full_story_dict(core.read_manuscript(story_id))
+                self.assertIn("chapters", unmodified_full)
+                self.assertEqual(unmodified_full["graftCount"], 0)
 
                 def fake_core_generate(*args, **kwargs):
                     schema_model = args[1]

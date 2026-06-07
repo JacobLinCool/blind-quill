@@ -52,7 +52,7 @@ const BQ = {
   createStory: (seed) => bqCall("create_story", { seed }).then((r) => r && r.story),
   // Stitch a fragment: { story (full, updated), reveal: { revealLine, rationale, targetLabel, highlightIds } }.
   stitch: (story_id, fragment) => bqCall("stitch", { story_id, fragment }),
-  // Read a sealed manuscript end to end.
+  // Read a manuscript end to end. The UI warns first when the reader has not contributed.
   readManuscript: (story_id) => bqCall("read_manuscript", { story_id }).then((r) => r && r.story),
 };
 

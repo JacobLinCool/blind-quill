@@ -165,7 +165,7 @@ function StartView({ onBack, onCreate }) {
         <h2 style={{ color: "var(--bone)" }}>Plant a seed</h2>
         <p style={{ color: "var(--bone-soft)" }}>
           One or two sentences. The bindery grows it into a full manuscript — then hides everything
-          but a public capsule. You'll be the only one who sees the whole thing.
+          but a public capsule until a reader chooses to reveal it.
         </p>
       </div>
 
@@ -200,6 +200,11 @@ function StartView({ onBack, onCreate }) {
 function CapsuleView({ story, onBack, onContribute, onRead, canRead }) {
   const c = story.capsule;
   const sealed = story.status === "sealed";
+  const [showReadWarning, setShowReadWarning] = useStateV(false);
+  const readAnyway = () => {
+    setShowReadWarning(false);
+    onRead();
+  };
   return (
     <div className="page">
       <button className="backlink" onClick={onBack}><Icon name="arrow-left" size={13} /> The bindery</button>
@@ -238,7 +243,10 @@ function CapsuleView({ story, onBack, onContribute, onRead, canRead }) {
               <Btn kind="ghost-paper" icon="book" onClick={onRead}>Read the manuscript</Btn>
             </div>
           ) : (
-            <Btn kind="thread" icon="quill" onClick={onContribute}>Contribute a fragment</Btn>
+            <div className="capsule-actions">
+              <Btn kind="thread" icon="quill" onClick={onContribute}>Contribute a fragment</Btn>
+              <Btn kind="ghost-paper" icon="book" onClick={() => setShowReadWarning(true)}>Read without changing</Btn>
+            </div>
           )}
         </article>
 
@@ -264,10 +272,38 @@ function CapsuleView({ story, onBack, onContribute, onRead, canRead }) {
           <p className="veil-panel__note">
             {sealed
               ? "This canon is sealed. Read it freely — it can accept no more grafts."
-              : "You cannot read the canon until you have changed it. Add a fragment to unseal the full story."}
+              : "Best play is to add a fragment before reading. If you are only here to read, you can reveal the canon from the capsule."}
           </p>
         </aside>
       </div>
+      {showReadWarning && (
+        <ReadWarningDialog
+          onContribute={() => { setShowReadWarning(false); onContribute(); }}
+          onRead={readAnyway}
+          onClose={() => setShowReadWarning(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function ReadWarningDialog({ onContribute, onRead, onClose }) {
+  return (
+    <div className="read-warning" role="dialog" aria-modal="true" aria-labelledby="read-warning-title">
+      <button className="read-warning__scrim" aria-label="Close read warning" onClick={onClose} />
+      <section className="read-warning__panel">
+        <div className="eyebrow read-warning__eyebrow">Reveal the hidden canon?</div>
+        <h2 id="read-warning-title">The game works best if you change the manuscript first.</h2>
+        <p>
+          Reading now will show the full story before you add anything. If you want the intended
+          blind grafting experience, add a small fragment first. If you are only here to read, you
+          can continue.
+        </p>
+        <div className="read-warning__actions">
+          <Btn kind="thread" icon="quill" onClick={onContribute}>Add a fragment first</Btn>
+          <Btn kind="ghost-paper" icon="book" onClick={onRead}>Read anyway</Btn>
+        </div>
+      </section>
     </div>
   );
 }

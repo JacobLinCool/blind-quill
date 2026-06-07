@@ -13,7 +13,7 @@ from patcher import apply_patch
 from prompts import build_plan_graft_messages, build_write_patch_messages
 from schemas import AppliedPatchResult, GraftPatch, GraftPlan, Story
 from story_store import create_story, get_story, list_stories, save_story
-from utils import InputValidationError, require_open_for_graft, validate_fragment, validate_story_id
+from utils import require_open_for_graft, validate_fragment, validate_story_id
 
 
 def gallery() -> list[Story]:
@@ -28,11 +28,8 @@ def capsule(story_id: str) -> Story:
     return get_story(validate_story_id(story_id))
 
 
-def read_sealed(story_id: str) -> Story:
-    story = get_story(validate_story_id(story_id))
-    if story.status != "sealed":
-        raise InputValidationError("This manuscript is still open — add a fragment to unseal the full story.")
-    return story
+def read_manuscript(story_id: str) -> Story:
+    return get_story(validate_story_id(story_id))
 
 
 def stitch(story_id: str, fragment: str) -> AppliedPatchResult:

@@ -7,13 +7,15 @@ requires-python = ">=3.12,<3.13"
 dependencies = [
   "accelerate",
   "filelock",
-  "gradio==6.16.0",
+  "gradio[oauth,mcp]==6.16.0",
   "pydantic>=2",
   "safetensors",
   "spaces",
   "torch==2.11.0",
   "torchvision==0.26.0",
   "transformers",
+  "uvicorn>=0.14.0",
+  "websockets>=10.4",
 ]
 
 [tool.uv]

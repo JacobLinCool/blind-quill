@@ -114,16 +114,44 @@ function StartView({ onBack, onCreate }) {
 
   if (phase === "binding") {
     return (
-      <div className="page page--narrow" style={{ minHeight: "70vh", display: "grid", placeItems: "center" }}>
-        <div className="text-center stagger" style={{ display: "grid", justifyItems: "center", gap: 18 }}>
-          <span className="stage__quill"><Icon name="quill" size={52} /></span>
-          <div className="eyebrow" style={{ color: "var(--bone-faint)", letterSpacing: ".26em" }}>
-            Binding the manuscript<span className="cursor" style={{ color: "var(--thread)" }}>▍</span>
+      <div className="page page--narrow binding-page">
+        <div className="binding-panel stagger" role="status" aria-live="polite">
+          <span className="binding-mark" aria-hidden="true">
+            <Icon name="book" size={42} stroke={1.5} />
+            <span className="binding-mark__thread" />
+          </span>
+          <div className="eyebrow binding-panel__eyebrow">
+            Creating your hidden manuscript<span className="cursor">▍</span>
           </div>
-          <p style={{ color: "var(--bone-soft)", maxWidth: "40ch", fontSize: 17, lineHeight: 1.6 }}>
-            The bindery is reading your seed in the dark, drawing chapters, characters, and a world
-            bible no player will ever fully see.
+          <h2>Binding a new story from your seed</h2>
+          <p className="binding-panel__lede">
+            The bindery is expanding your prompt into chapters, characters, and secret world rules.
+            When it finishes, you will land on the public capsule for the new manuscript.
           </p>
+          <ol className="binding-steps" aria-label="What is happening now">
+            <li>
+              <span className="binding-steps__dot" />
+              <div>
+                <strong>Building the hidden canon</strong>
+                <p>Drafting the full story that later players cannot read up front.</p>
+              </div>
+            </li>
+            <li>
+              <span className="binding-steps__dot" />
+              <div>
+                <strong>Writing the public capsule</strong>
+                <p>Preparing the title, genre, visible characters, and open questions.</p>
+              </div>
+            </li>
+            <li>
+              <span className="binding-steps__dot" />
+              <div>
+                <strong>Saving it to the bindery</strong>
+                <p>After this, you can read it, share it, or add another fragment.</p>
+              </div>
+            </li>
+          </ol>
+          <p className="binding-note">This can take about a minute on ZeroGPU. Keep this tab open.</p>
         </div>
       </div>
     );

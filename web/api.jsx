@@ -1,8 +1,7 @@
 // ============================================================
 // BLIND QUILL — backend bridge
 // Talks to the gradio.Server endpoints (app.py) through the
-// Gradio JS Client. Replaces the prototype's local stub editor
-// with the real invisible editor (Qwen) behind the queue.
+// Gradio JS Client. Runs the invisible editor (Qwen) behind the queue.
 // Exposes BQ + KINDS to window for the Babel views.
 // ============================================================
 

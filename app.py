@@ -1,6 +1,6 @@
 """Blind Quill — gradio.Server backend for the custom "Invisible Bindery" frontend.
 
-The UI lives in web/ (a React-via-Babel prototype handed off from Claude Design).
+The UI lives in web/ as the production React-via-Babel frontend.
 Here we serve that frontend and expose the bindery as queued Gradio API endpoints,
 so the rich custom UI keeps Gradio's queue, concurrency control, and ZeroGPU.
 """

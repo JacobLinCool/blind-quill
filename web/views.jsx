@@ -56,11 +56,10 @@ function GalleryView({ stories, onOpen, onStartNew }) {
     <div className="page">
       <section className="bindery-hero stagger">
         <div className="eyebrow bindery-hero__eyebrow">A blinded story-grafting game</div>
-        <h1>You never read the whole book. You only <em>change</em> it.</h1>
+        <h1>Add a fragment. <em>Bend</em> the story.</h1>
         <p className="bindery-hero__lede">
-          Every manuscript here is hidden. You see a single public capsule — a genre, a few
-          characters, a whisper of plot. Add one fragment, and an invisible editor decides where
-          in the secret canon it belongs, then reveals how it was stitched in.
+          Every manuscript here is hidden — a genre, a few characters, a whisper of plot. Drop in
+          one fragment and an invisible editor weaves it into the secret canon.
         </p>
         <div className="bindery-hero__actions">
           <Btn kind="thread" size="lg" icon="quill" onClick={onStartNew}>Begin a manuscript</Btn>

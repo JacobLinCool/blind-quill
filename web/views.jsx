@@ -6,6 +6,48 @@
 
 const { useState: useStateV, useEffect: useEffectV, useRef: useRefV } = React;
 
+const SEED_EXAMPLES = [
+  {
+    label: "Bare image",
+    text: "A city where every doorway remembers the last person who lied inside it.",
+  },
+  {
+    label: "Clear premise",
+    text: "Every winter, a mountain village elects one child to speak for the dead until spring.",
+  },
+  {
+    label: "Open scene",
+    text: "An apprentice cartographer finds a coastline on her new map that is not on the land, and each morning the ink moves closer to home.",
+  },
+  {
+    label: "Full setup",
+    text: "On a generation ship whose crew believes Earth was a myth invented to calm children, a janitor discovers a sealed garden where rain falls upward and an old radio is still receiving ocean weather reports.",
+  },
+];
+
+const FRAGMENT_EXAMPLES = [
+  {
+    label: "Object",
+    kind: "an object",
+    text: "A brass key in the protagonist's pocket becomes warm whenever someone nearby tells the truth.",
+  },
+  {
+    label: "Trait",
+    kind: "a trait",
+    text: "The quietest character always counts exits before answering a question.",
+  },
+  {
+    label: "Scene",
+    kind: "a scene",
+    text: "During a celebration, all the candles bend toward a locked room no one admits exists.",
+  },
+  {
+    label: "Strange rule",
+    kind: "a strange rule",
+    text: "A page torn from a field guide: 'If the moths arrive before dawn, do not look at the moon.'",
+  },
+];
+
 // ---------------- Gallery / The Bindery ----------------
 function GalleryView({ stories, onOpen, onStartNew }) {
   const open = stories.filter((s) => s.status !== "sealed");
@@ -56,7 +98,7 @@ function StartView({ onBack, onCreate }) {
   const [phase, setPhase] = useStateV("write"); // write | binding
   const [error, setError] = useStateV(null);
   const MAX = 500;
-  const example = "A lighthouse keeper discovers that every storm washes a different childhood memory onto the shore.";
+  const placeholder = SEED_EXAMPLES[1].text;
 
   const begin = () => {
     if (!seed.trim()) return;
@@ -105,12 +147,17 @@ function StartView({ onBack, onCreate }) {
           rows={4}
           maxLength={MAX}
           value={seed}
-          placeholder={example}
+          placeholder={placeholder}
           onChange={(e) => setSeed(e.target.value)}
         />
         <div className="field__count">{seed.length} / {MAX}</div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginTop: 14, flexWrap: "wrap" }}>
-          <button className="kind" onClick={() => setSeed(example)}>Use the demo seed</button>
+        <ExampleChooser
+          title="Example seeds"
+          examples={SEED_EXAMPLES}
+          value={seed}
+          onSelect={(example) => setSeed(example.text)}
+        />
+        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 12, marginTop: 14, flexWrap: "wrap" }}>
           <Btn kind="thread" icon="quill" onClick={begin} disabled={!seed.trim()}>Begin manuscript</Btn>
         </div>
       </div>
@@ -202,9 +249,13 @@ function ComposerView({ story, draft, onDraftChange, onBack, onStitch }) {
   const [frag, setFrag] = useStateV(draft || "");
   const [kind, setKind] = useStateV(null);
   const MAX = 500;
-  const example = "The keeper has always avoided blue glass because it shows reflections that are one day late.";
+  const placeholder = FRAGMENT_EXAMPLES[0].text;
   // Keep App's draft in sync so a failed stitch can return here without losing text.
   const update = (v) => { setFrag(v); if (onDraftChange) onDraftChange(v); };
+  const chooseExample = (example) => {
+    setKind(example.kind);
+    update(example.text);
+  };
 
   return (
     <div className="page page--narrow">
@@ -225,16 +276,42 @@ function ComposerView({ story, draft, onDraftChange, onBack, onStitch }) {
 
         <div className="field" style={{ background: "var(--paper-hi)", padding: 24, borderRadius: "var(--r-lg)", border: "1px solid var(--paper-edge)" }}>
           <label className="field__label">Your fragment{kind ? " · " + kind : ""}</label>
-          <textarea rows={4} maxLength={MAX} value={frag} placeholder={example} onChange={(e) => update(e.target.value)} />
+          <textarea rows={4} maxLength={MAX} value={frag} placeholder={placeholder} onChange={(e) => update(e.target.value)} />
           <div className="field__count">{frag.length} / {MAX}</div>
+          <ExampleChooser
+            title="Example fragments"
+            examples={FRAGMENT_EXAMPLES}
+            value={frag}
+            onSelect={chooseExample}
+          />
           <div className="composer__actions">
-            <button className="kind" onClick={() => update(example)}>Try the demo fragment</button>
             <Btn kind="thread" icon="quill" onClick={() => frag.trim() && onStitch(frag)} disabled={!frag.trim()}>Stitch my fragment</Btn>
           </div>
         </div>
         <p className="composer__hint text-center" style={{ marginTop: 18 }}>
           Once stitched, the full manuscript unseals — and your fragment is part of the canon forever.
         </p>
+      </div>
+    </div>
+  );
+}
+
+function ExampleChooser({ title, examples, value, onSelect }) {
+  return (
+    <div className="examples">
+      <div className="examples__head">{title}</div>
+      <div className="examples__list">
+        {examples.map((example) => (
+          <button
+            type="button"
+            key={example.label}
+            className={"example-choice" + (value === example.text ? " is-active" : "")}
+            onClick={() => onSelect(example)}
+          >
+            <span className="example-choice__label">{example.label}</span>
+            <span className="example-choice__text">{example.text}</span>
+          </button>
+        ))}
       </div>
     </div>
   );

@@ -169,7 +169,62 @@
 .kind:hover { border-color: var(--ink-faint); color: var(--ink-soft); }
 .kind.is-active { background: var(--ink); color: var(--paper-hi); border-color: var(--ink); }
 
-.composer__actions { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 22px; flex-wrap: wrap; }
+.examples {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+.examples__head {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.examples__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 8px;
+}
+.example-choice {
+  display: grid;
+  gap: 5px;
+  text-align: left;
+  width: 100%;
+  min-height: 92px;
+  padding: 10px 12px 10px 14px;
+  border: 0;
+  border-left: 2px solid var(--paper-edge);
+  border-radius: var(--r-sm);
+  background: rgba(27,22,15,.035);
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: background .18s var(--ease), border-color .18s var(--ease), color .18s var(--ease);
+}
+.example-choice:hover {
+  background: rgba(27,22,15,.06);
+  border-left-color: var(--thread);
+  color: var(--ink);
+}
+.example-choice.is-active {
+  background: rgba(178,58,34,.08);
+  border-left-color: var(--thread);
+  color: var(--ink);
+}
+.example-choice__label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--thread);
+}
+.example-choice__text {
+  font-size: 13px;
+  line-height: 1.42;
+  overflow-wrap: anywhere;
+}
+
+.composer__actions { display: flex; align-items: center; justify-content: flex-end; gap: 16px; margin-top: 22px; flex-wrap: wrap; }
 .composer__hint { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); letter-spacing: .06em; }
 
 /* ===================== Reveal stage (the dopamine peak) ===================== */

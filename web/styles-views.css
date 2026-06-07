@@ -1,0 +1,344 @@
+/* ============================================================
+   BLIND QUILL — view & component styles
+   (gallery, capsule, composer, reveal stage, reader)
+   ============================================================ */
+
+/* ===================== Gallery / Bindery ===================== */
+.bindery-hero {
+  display: grid;
+  gap: 28px;
+  padding-bottom: 40px;
+  border-bottom: 1px solid var(--dark-edge);
+  margin-bottom: 40px;
+}
+.bindery-hero__eyebrow { color: var(--gilt-hi); }
+.bindery-hero h1 {
+  font-size: clamp(40px, 7vw, 84px);
+  font-weight: 800;
+  line-height: 0.96;
+  letter-spacing: -0.025em;
+  max-width: 16ch;
+}
+.bindery-hero h1 em { font-style: italic; color: var(--gilt-hi); }
+.bindery-hero__lede {
+  font-size: clamp(16px, 2vw, 20px);
+  line-height: 1.6;
+  color: var(--bone-soft);
+  max-width: 56ch;
+}
+.bindery-hero__actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+
+.section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+.section-head h2 { font-size: 15px; font-family: var(--mono); font-weight: 500; letter-spacing: 0.28em; text-transform: uppercase; color: var(--bone-faint); }
+
+.shelf {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: 18px;
+}
+
+/* Manuscript card = a closed book seen face-on */
+.ms-card {
+  position: relative;
+  text-align: left;
+  border: 1px solid var(--dark-edge);
+  border-radius: var(--r-lg);
+  background:
+    linear-gradient(155deg, var(--dark-3) 0%, var(--dark-2) 100%);
+  padding: 22px 22px 20px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform .28s var(--ease-out), border-color .28s var(--ease), box-shadow .28s var(--ease);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 230px;
+}
+.ms-card::before {
+  /* the book's stitched spine */
+  content: "";
+  position: absolute;
+  left: 13px; top: 14px; bottom: 14px;
+  width: 1px;
+  background: repeating-linear-gradient(180deg, var(--thread) 0 5px, transparent 5px 11px);
+  opacity: .5;
+}
+.ms-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--gilt-deep);
+  box-shadow: 0 22px 50px -24px rgba(0,0,0,.7);
+}
+.ms-card__top { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-left: 12px; }
+.ms-card__title { font-size: 25px; font-weight: 700; line-height: 1.08; color: var(--bone); padding-left: 12px; letter-spacing: -0.01em; }
+.ms-card__genre { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gilt); padding-left: 12px; }
+.ms-card__summary { font-size: 15px; line-height: 1.58; color: var(--bone-soft); padding-left: 12px; flex: 1; }
+.ms-card__foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-left: 12px; padding-top: 4px; border-top: 1px solid var(--dark-edge); }
+.ms-card__code { font-family: var(--mono); font-size: 11px; color: var(--bone-faint); letter-spacing: .1em; }
+
+/* "Begin" card — distinct, invites authorship */
+.ms-card--new {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border-style: dashed;
+  border-color: var(--gilt-deep);
+  background: radial-gradient(120% 100% at 50% 0%, rgba(196,154,74,.08), transparent 70%);
+  gap: 16px;
+}
+.ms-card--new::before { display: none; }
+.ms-card--new:hover { border-color: var(--gilt); background: radial-gradient(120% 100% at 50% 0%, rgba(196,154,74,.14), transparent 70%); }
+.ms-card--new .plus {
+  width: 46px; height: 46px; border-radius: 50%;
+  border: 1px solid var(--gilt-deep);
+  display: grid; place-items: center;
+  color: var(--gilt-hi); font-size: 26px; font-family: var(--serif);
+}
+.ms-card--new h3 { color: var(--bone); font-size: 20px; }
+.ms-card--new p { color: var(--bone-faint); font-size: 13px; max-width: 26ch; line-height: 1.5; }
+
+/* ===================== Capsule (blinded teaser) ===================== */
+.capsule-wrap { display: grid; grid-template-columns: 1.15fr 1fr; gap: clamp(24px, 4vw, 56px); align-items: start; }
+@media (max-width: 900px) { .capsule-wrap { grid-template-columns: 1fr; } .veil-panel { position: static; } }
+
+.capsule {
+  background: var(--paper-hi);
+  color: var(--ink);
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--r-lg);
+  padding: clamp(26px, 4vw, 44px);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 30px 70px -40px rgba(0,0,0,.6);
+}
+.capsule__eyebrow { color: var(--thread); margin-bottom: 18px; }
+.capsule__title { font-size: clamp(30px, 4.5vw, 46px); font-weight: 800; line-height: 1.02; letter-spacing: -0.02em; margin-bottom: 8px; }
+.capsule__genre { font-family: var(--mono); font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gilt-deep); margin-bottom: 22px; }
+.capsule__summary { font-size: 19px; line-height: 1.62; color: var(--ink-soft); border-left: 2px solid var(--thread); padding-left: 18px; margin-bottom: 30px; }
+.capsule__sub { font-family: var(--mono); font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-faint); margin: 0 0 12px; }
+
+.char-list { display: grid; gap: 10px; margin-bottom: 28px; }
+.char {
+  display: grid; grid-template-columns: minmax(96px, max-content) 1fr; gap: 14px; align-items: start;
+  padding-bottom: 10px; border-bottom: 1px dotted var(--paper-edge);
+}
+.char:last-child { border-bottom: none; }
+.char__name { font-weight: 700; font-size: 16px; line-height: 1.3; }
+.char__desc { font-size: 15px; color: var(--ink-soft); line-height: 1.45; }
+
+.qlist { list-style: none; padding: 0; margin: 0 0 8px; display: grid; gap: 9px; }
+.qlist li { font-style: italic; font-size: 16px; color: var(--ink-soft); padding-left: 22px; position: relative; line-height: 1.4; }
+.qlist li::before { content: "?"; position: absolute; left: 0; top: 0; font-family: var(--mono); font-style: normal; color: var(--thread); font-weight: 600; }
+
+/* The hidden-manuscript "veil" panel beside the capsule */
+.veil-panel {
+  position: sticky; top: 92px;
+  border: 1px solid var(--dark-edge);
+  border-radius: var(--r-lg);
+  background: linear-gradient(160deg, var(--dark-2), var(--dark));
+  padding: 26px 26px 30px;
+  overflow: hidden;
+}
+.veil-panel__head { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+.veil-panel__lock { width: 30px; height: 30px; display: grid; place-items: center; color: var(--gilt); }
+.veil-panel__title { font-family: var(--mono); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--bone-faint); }
+.veil-panel__doc { display: grid; gap: 18px; -webkit-mask-image: linear-gradient(180deg, #000 60%, transparent 100%); mask-image: linear-gradient(180deg, #000 60%, transparent 100%); }
+.veil-block { display: grid; gap: 7px; }
+.veil-block .h { height: .8em; width: 42%; border-radius: 2px; background: rgba(196,154,74,.32); }
+.veil-panel__note { margin-top: 22px; font-family: var(--mono); font-size: 11px; color: var(--bone-faint); letter-spacing: .08em; line-height: 1.7; text-align: center; }
+
+/* ===================== Composer ===================== */
+.composer { max-width: 720px; margin: 0 auto; }
+.composer__prompt { display: grid; justify-items: center; gap: 12px; max-width: 680px; margin: 0 auto 30px; text-align: center; }
+.composer__prompt .eyebrow { color: var(--thread); }
+.composer__prompt h2 { font-size: clamp(24px, 3.4vw, 34px); font-weight: 800; margin: 0; letter-spacing: -0.02em; line-height: 1.12; text-wrap: balance; }
+.composer__prompt p { font-size: 17px; color: var(--ink-soft); line-height: 1.55; max-width: 48ch; margin: 0; }
+
+.kinds { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 22px 0 30px; }
+.kind {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 7px 13px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--paper-edge); color: var(--ink-faint); background: none;
+  transition: all .18s var(--ease);
+}
+.kind:hover { border-color: var(--ink-faint); color: var(--ink-soft); }
+.kind.is-active { background: var(--ink); color: var(--paper-hi); border-color: var(--ink); }
+
+.composer__actions { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 22px; flex-wrap: wrap; }
+.composer__hint { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); letter-spacing: .06em; }
+
+/* ===================== Reveal stage (the dopamine peak) ===================== */
+.stage {
+  position: relative;
+  min-height: 100vh; width: 100%;
+  display: grid; place-items: center;
+  background: radial-gradient(120% 100% at 50% 30%, #1c160d, var(--dark) 70%, #0c0905 100%);
+  overflow: hidden;
+  padding: 40px 20px;
+}
+.stage__inner { width: min(680px, 92vw); text-align: center; position: relative; z-index: 2; }
+.stage__phase { font-family: var(--mono); font-size: 12px; letter-spacing: 0.26em; text-transform: uppercase; color: var(--bone-faint); margin-bottom: 26px; min-height: 18px; }
+.stage__phase .cursor { display: inline-block; width: 8px; animation: typeBlink 1s steps(1) infinite; color: var(--thread); }
+
+.stage__quill { width: 56px; height: 56px; margin: 0 auto 30px; color: var(--gilt); animation: flicker 3.4s ease-in-out infinite; }
+
+/* the veiled doc the editor scans */
+.scan-doc { display: grid; gap: 13px; max-width: 440px; margin: 0 auto 8px; text-align: left; }
+.scan-line { height: .7em; border-radius: 2px; background: rgba(138,124,99,.22); position: relative; overflow: hidden; }
+.scan-line.is-target { background: rgba(196,154,74,.18); }
+.scan-sweep {
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(221,184,102,.5), transparent);
+  transform: translateX(-100%);
+  animation: scanSweep 1.6s var(--ease) infinite;
+}
+@keyframes scanSweep { to { transform: translateX(100%); } }
+
+/* fragment card that flies into place */
+.frag-card {
+  margin: 0 auto;
+  max-width: 420px;
+  background: var(--paper-hi);
+  color: var(--ink);
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--r-md);
+  padding: 18px 20px;
+  font-size: 16px; line-height: 1.5; font-style: italic;
+  box-shadow: 0 20px 50px -20px rgba(0,0,0,.7);
+}
+
+.reveal-line {
+  font-family: var(--serif);
+  font-size: clamp(22px, 3.2vw, 30px);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--bone);
+  margin: 0 auto 22px;
+  max-width: 26ch;
+  text-wrap: balance;
+}
+.reveal-line em { font-style: italic; color: var(--gilt-hi); }
+.reveal-rationale { font-size: 17px; line-height: 1.6; color: var(--bone-soft); max-width: 46ch; margin: 0 auto 28px; }
+.reveal-target {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--gilt-hi); border: 1px solid var(--gilt-deep); border-radius: 999px; padding: 7px 14px;
+  margin-bottom: 30px;
+}
+.reveal-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+/* ===================== Manuscript reader ===================== */
+.reader { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: clamp(24px, 4vw, 60px); align-items: start; }
+@media (max-width: 880px) { .reader { grid-template-columns: 1fr; } .reader-rail { position: static; } }
+
+.reader-rail { position: sticky; top: 92px; display: grid; gap: 4px; }
+.reader-rail__head { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 12px; }
+.toc-item {
+  display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: baseline;
+  padding: 9px 12px; border-radius: var(--r-sm); cursor: pointer; border: none; background: none; text-align: left; width: 100%;
+  transition: background .18s var(--ease);
+}
+.toc-item:hover { background: rgba(27,22,15,.05); }
+.toc-item.is-active { background: rgba(178,58,34,.08); }
+.toc-item__no { font-family: var(--mono); font-size: 11px; color: var(--thread); font-variant-numeric: tabular-nums; }
+.toc-item__title { font-size: 14px; color: var(--ink-soft); line-height: 1.3; }
+.toc-item.is-active .toc-item__title { color: var(--ink); font-weight: 600; }
+
+.reader-body { max-width: var(--measure); }
+.reader-body__head { display: flex; flex-direction: column; gap: 12px; margin-bottom: 36px; padding-bottom: 24px; border-bottom: 1px solid var(--paper-edge); }
+.reader-body__title { font-size: clamp(32px, 5vw, 52px); font-weight: 800; letter-spacing: -0.025em; line-height: 1.05; margin: 0; }
+.reader-meta { display: flex; flex-wrap: wrap; gap: 8px 18px; font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); }
+
+.chapter { margin: 0 0 52px; scroll-margin-top: 100px; }
+.chapter__no { font-family: var(--mono); font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--thread); margin-bottom: 8px; }
+.chapter__title { font-size: clamp(22px, 3vw, 30px); font-weight: 700; letter-spacing: -0.015em; margin-bottom: 6px; }
+.chapter__summary { font-style: italic; color: var(--ink-faint); font-size: 15px; line-height: 1.5; margin-bottom: 24px; }
+.chapter__body p {
+  font-size: 18.5px; line-height: 1.74; color: var(--ink); margin: 0 0 1.05em; text-wrap: pretty;
+}
+/* illuminated drop-cap on the first paragraph of each chapter */
+.chapter__body > p.lead .dropcap {
+  float: left;
+  font-size: 3.3em;
+  line-height: 0.72;
+  font-weight: 800;
+  color: var(--thread);
+  margin: 0.04em 0.1em 0 0;
+  font-style: normal;
+}
+
+/* grafted passage — stitched + glowing */
+.graft {
+  position: relative;
+  background: linear-gradient(180deg, rgba(196,154,74,.13), rgba(196,154,74,.05));
+  border-radius: var(--r-md);
+  padding: 14px 18px 14px 22px;
+  margin: 1.2em 0 !important;
+  border: 1px dashed var(--thread);
+}
+.graft::before {
+  content: "";
+  position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; border-radius: 2px;
+  background: repeating-linear-gradient(180deg, var(--thread) 0 6px, transparent 6px 13px);
+}
+.graft.is-new { animation: glowPulse 2.2s var(--ease-out) 1; }
+.graft__tag {
+  position: absolute; top: -10px; right: 14px;
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: .18em; text-transform: uppercase;
+  color: #fbeee6; background: var(--thread); padding: 3px 9px; border-radius: 999px; white-space: nowrap;
+}
+
+/* ===================== Graft ledger (history) ===================== */
+.ledger-panel { border: 1px solid var(--paper-edge); border-radius: var(--r-lg); background: var(--paper-hi); padding: 22px 24px; margin-top: 8px; }
+.ledger-panel h3 { font-family: var(--mono); font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--ink-faint); font-weight: 500; margin-bottom: 18px; }
+.ledger-row { display: grid; grid-template-columns: auto 1fr; gap: 14px; padding: 12px 0; border-top: 1px dotted var(--paper-edge); }
+.ledger-row:first-of-type { border-top: none; }
+.ledger-row__no { font-family: var(--mono); font-size: 12px; color: var(--thread); font-variant-numeric: tabular-nums; padding-top: 2px; }
+.ledger-row__frag { font-style: italic; font-size: 15px; color: var(--ink); line-height: 1.45; }
+.ledger-row__where { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); letter-spacing: .06em; margin-top: 4px; }
+
+/* ===================== Wax seal (sealed manuscripts) ===================== */
+.wax {
+  width: 120px; height: 120px; border-radius: 50%;
+  display: grid; place-items: center; margin: 0 auto;
+  background: radial-gradient(circle at 38% 32%, var(--thread-hi), var(--thread) 45%, var(--thread-deep) 100%);
+  box-shadow: inset 0 4px 10px rgba(0,0,0,.35), inset 0 -6px 12px rgba(0,0,0,.3), 0 12px 30px -10px rgba(0,0,0,.6);
+  color: rgba(255,240,232,.9);
+  font-family: var(--mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; text-align: center;
+  position: relative;
+}
+.wax::before { content: ""; position: absolute; inset: 9px; border-radius: 50%; border: 1px solid rgba(255,240,232,.25); }
+.wax__q { font-family: var(--serif); font-style: italic; font-weight: 800; font-size: 40px; line-height: 1; }
+
+.sealed-note { text-align: center; max-width: 44ch; margin: 22px auto 0; color: var(--bone-soft); font-size: 16px; line-height: 1.6; }
+
+/* ===================== Toast / share ===================== */
+.toast {
+  position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%);
+  background: var(--ink); color: var(--paper-hi);
+  font-family: var(--mono); font-size: 12px; letter-spacing: .08em;
+  padding: 12px 20px; border-radius: 999px; z-index: 90;
+  box-shadow: 0 16px 40px -12px rgba(0,0,0,.6);
+  animation: fadeUp .3s var(--ease-out);
+  display: flex; align-items: center; gap: 10px;
+}
+
+/* ===================== Back link ===================== */
+.backlink {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--ink-faint); cursor: pointer; background: none; border: none; padding: 0; margin-bottom: 26px;
+  transition: color .18s var(--ease);
+}
+.backlink:hover { color: var(--ink); }
+.world-dark .backlink { color: var(--bone-faint); }
+.world-dark .backlink:hover { color: var(--bone); }
+
+/* ===================== Misc ===================== */
+.divider-stitch { height: 1px; background: repeating-linear-gradient(90deg, var(--thread) 0 7px, transparent 7px 15px); opacity: .4; margin: 8px 0; }
+.text-center { text-align: center; }

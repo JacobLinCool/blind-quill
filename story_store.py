@@ -48,6 +48,11 @@ def list_story_summaries() -> list[StorySummary]:
     return sorted(summaries, key=lambda item: item.updated_at, reverse=True)
 
 
+def list_stories() -> list[Story]:
+    stories = _read_stories()
+    return sorted(stories.values(), key=lambda story: story.updated_at, reverse=True)
+
+
 def story_exists(story_id: str) -> bool:
     clean_id = validate_story_id(story_id)
     return clean_id in _read_stories()

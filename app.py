@@ -1,393 +1,108 @@
-from __future__ import annotations
+"""Blind Quill — gradio.Server backend for the custom "Invisible Bindery" frontend.
 
-import traceback
-from html import escape
-from typing import Any
-
-import gradio as gr
-
-from model_client import generate_json
-from patcher import apply_patch
-from prompts import build_plan_graft_messages, build_write_patch_messages
-from render import render_capsule, render_full_story, render_gallery, render_reveal, share_link
-from schemas import GraftPatch, GraftPlan
-from story_store import StoryStoreError, create_story, get_story, list_story_summaries, save_story
-from utils import InputValidationError, validate_fragment, validate_story_id
-
-
-APP_CSS = """
-.gradio-container {
-  color-scheme: light;
-  --body-background-fill: #f5eddc !important;
-  --body-text-color: #221b14 !important;
-  --body-text-color-subdued: #5e5145 !important;
-  --block-background-fill: rgba(255, 250, 239, 0.94) !important;
-  --block-border-color: #d3bea0 !important;
-  --block-info-text-color: #5e5145 !important;
-  --block-label-background-fill: #fff6e8 !important;
-  --block-label-border-color: #d3bea0 !important;
-  --block-label-text-color: #221b14 !important;
-  --input-background-fill: #fffaf0 !important;
-  --input-border-color: #b9a17f !important;
-  --input-placeholder-color: #7b6a55 !important;
-  --input-text-color: #221b14 !important;
-  --button-primary-background-fill: #4a4038 !important;
-  --button-primary-background-fill-hover: #5b4d42 !important;
-  --button-primary-border-color: #4a4038 !important;
-  --button-primary-text-color: #fff8e8 !important;
-  --button-secondary-background-fill: #4a4038 !important;
-  --button-secondary-background-fill-hover: #5b4d42 !important;
-  --button-secondary-border-color: #4a4038 !important;
-  --button-secondary-text-color: #fff8e8 !important;
-  background:
-    linear-gradient(90deg, rgba(90, 61, 31, 0.05) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(90, 61, 31, 0.04) 1px, transparent 1px),
-    #f5eddc;
-  background-size: 28px 28px;
-  color: #221b14 !important;
-}
-.app-shell { max-width: 1120px; margin: 0 auto; }
-.gradio-container .app-shell {
-  color: #221b14 !important;
-}
-.gradio-container .app-shell :where(h1, h2, h3, h4, p, li, label, span, div) {
-  color: #221b14 !important;
-}
-.gradio-container .app-shell :where(input, textarea, select),
-.gradio-container .app-shell :where([role="textbox"], [role="combobox"], [role="listbox"]) {
-  background: #fffaf0 !important;
-  border-color: #b9a17f !important;
-  color: #221b14 !important;
-}
-.gradio-container .app-shell .form {
-  background: #fffaf0 !important;
-  color: #221b14 !important;
-}
-.gradio-container .app-shell input::placeholder,
-.gradio-container .app-shell textarea::placeholder {
-  color: #7b6a55 !important;
-  opacity: 1 !important;
-}
-.gradio-container .app-shell :where(button) {
-  background: #4a4038 !important;
-  border-color: #4a4038 !important;
-  color: #fff8e8 !important;
-}
-.gradio-container .app-shell button :where(span, div, p) {
-  color: #fff8e8 !important;
-}
-.gradio-container .app-shell :where(button:hover) {
-  background: #5b4d42 !important;
-  border-color: #5b4d42 !important;
-}
-.gradio-container .app-shell :where(button[role="tab"], [role="tab"]) {
-  background: transparent !important;
-  border-color: transparent !important;
-  color: #5e5145 !important;
-}
-.gradio-container .app-shell :where(button[role="tab"], [role="tab"]) :where(span, div, p) {
-  color: #5e5145 !important;
-}
-.gradio-container .app-shell :where(button[role="tab"][aria-selected="true"], [role="tab"][aria-selected="true"]) {
-  border-bottom-color: #c26132 !important;
-  color: #8a3f18 !important;
-}
-.gradio-container .app-shell :where(button[role="tab"][aria-selected="true"], [role="tab"][aria-selected="true"]) :where(span, div, p) {
-  color: #8a3f18 !important;
-}
-.gradio-container .app-shell :where(a) {
-  color: #7a3515 !important;
-}
-.gradio-container .app-shell .app-title h1 { margin-bottom: 0.2rem; font-size: 2rem; color: #221b14 !important; }
-.gradio-container .app-shell .app-title p { margin-top: 0; color: #5e5145 !important; }
-.capsule, .reveal, .full-story, .gallery-card {
-  border: 1px solid #d3bea0;
-  border-radius: 8px;
-  background: rgba(255, 250, 239, 0.88);
-  box-shadow: 0 1px 0 rgba(60, 41, 20, 0.06);
-  color: #221b14 !important;
-}
-.capsule, .reveal, .full-story { padding: 18px; }
-.capsule h2, .chapter h3, .gallery-card h3 { margin-bottom: 0.2rem; }
-.capsule h3 { margin: 1rem 0 0.2rem; font-size: 1rem; }
-.capsule :where(h2, h3, p, li, strong),
-.full-story :where(h3, p),
-.gallery-card :where(h3, p) {
-  color: #221b14 !important;
-}
-.gradio-container .app-shell :where(.meta, .progress, .story-code, .chapter-summary) { color: #6f5f4c !important; }
-.story-code code {
-  background: #efe1c8 !important;
-  border-radius: 4px;
-  color: #4b321d !important;
-  padding: 2px 5px;
-}
-.status-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.badge {
-  border-radius: 999px;
-  padding: 2px 9px;
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0;
-}
-.badge.open { background: #d9ead3 !important; color: #214b26 !important; }
-.badge.sealed { background: #ead7d3 !important; color: #6c2b22 !important; }
-.gallery-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 12px;
-}
-.gallery-card { padding: 14px; }
-.chapter { border-top: 1px solid #ddc8aa; padding-top: 16px; margin-top: 16px; }
-.chapter:first-child { border-top: 0; margin-top: 0; padding-top: 0; }
-.paragraph {
-  line-height: 1.62;
-  margin: 0.85rem 0;
-}
-.graft-highlight {
-  background: #fff0a8;
-  border-left: 4px solid #a97817;
-  padding: 10px 12px;
-  border-radius: 6px;
-  color: #221b14 !important;
-}
-.reveal {
-  background: #2f261d !important;
-  color: #fff8e8 !important;
-  border-color: #2f261d !important;
-}
-.gradio-container .app-shell .reveal :where(p, span, div, strong) {
-  color: #fff8e8 !important;
-}
-.gradio-container .app-shell .reveal .meta { color: #dfc9a9 !important; }
-.reveal-line { font-size: 1.15rem; font-weight: 700; }
-.empty-state { color: #6f5f4c !important; }
-textarea { font-family: inherit; }
+The UI lives in web/ (a React-via-Babel prototype handed off from Claude Design).
+Here we serve that frontend and expose the bindery as queued Gradio API endpoints,
+so the rich custom UI keeps Gradio's queue, concurrency control, and ZeroGPU.
 """
 
+from __future__ import annotations
 
-def refresh_gallery() -> tuple[dict[str, Any], str]:
-    summaries = list_story_summaries()
-    choices = [(f"{item.title} ({item.graft_count}/{item.max_grafts}) - {item.story_id}", item.story_id) for item in summaries]
-    return gr.update(choices=choices, value=choices[0][1] if choices else None), render_gallery(summaries)
+import os
+import traceback
+from pathlib import Path
+
+import gradio as gr
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from gradio import Server
+
+import core
+from model_client import ModelClientError
+from patcher import PatchApplicationError
+from presenter import card_dict, full_story_dict, reveal_dict
+from story_store import StoryStoreError
+from utils import InputValidationError
+
+WEB_DIR = Path(__file__).resolve().parent / "web"
+
+_USER_FACING_ERRORS = (
+    InputValidationError,
+    StoryStoreError,
+    PatchApplicationError,
+    ModelClientError,
+    ValueError,
+)
 
 
-def create_manuscript(seed: str, request: gr.Request) -> tuple[str, str, str, str, dict[str, Any], str]:
+def _guard(call, *args, **kwargs):
+    """Run a flow, converting known failures into client-visible gr.Error messages."""
     try:
-        story = create_story(seed)
-        base_url = _request_base_url(request)
-        share_markdown = _share_markdown(base_url, story.story_id)
-        gallery_update, gallery_html = refresh_gallery()
-        return (
-            render_capsule(story),
-            render_full_story(story),
-            share_markdown,
-            story.story_id,
-            gallery_update,
-            gallery_html,
-        )
-    except Exception as exc:
-        return _error_html(exc), "", "", "", gr.update(), render_gallery(list_story_summaries())
-
-
-def load_selected_story(story_id: str, request: gr.Request) -> tuple[str, str, str, str]:
-    try:
-        clean_id = validate_story_id(story_id)
-        story = get_story(clean_id)
-        share_markdown = _share_markdown(_request_base_url(request), story.story_id)
-        sealed_note = ""
-        if story.status == "sealed":
-            sealed_note = "<p class='meta'>This manuscript is sealed. You can read it, but it cannot accept new grafts.</p>"
-        return render_capsule(story) + sealed_note, share_markdown, "", ""
-    except Exception as exc:
-        return _error_html(exc), "", "", ""
-
-
-def load_gallery_story(story_id: str, request: gr.Request) -> tuple[str, str, str, str, str, str, str]:
-    story_id_value = story_id or ""
-    capsule, link, reveal, full_story = load_selected_story(story_id_value, request)
-    return story_id_value, capsule, link, capsule, link, reveal, full_story
-
-
-def stitch_fragment(story_id: str, fragment: str, request: gr.Request) -> tuple[str, str, str, str, str, dict[str, Any], str]:
-    try:
-        clean_id = validate_story_id(story_id)
-        clean_fragment = validate_fragment(fragment)
-        story = get_story(clean_id)
-        plan = generate_json(
-            build_plan_graft_messages(story, clean_fragment),
-            GraftPlan,
-            "GraftPlan",
-            max_new_tokens=4096,
-        )
-        patch = generate_json(
-            build_write_patch_messages(story, plan, clean_fragment),
-            GraftPatch,
-            "GraftPatch",
-            max_new_tokens=8192,
-        )
-        result = apply_patch(story, plan, patch, clean_fragment)
-        save_story(result.story, expected_updated_at=story.updated_at)
-        share_markdown = _share_markdown(_request_base_url(request), result.story.story_id)
-        gallery_update, gallery_html = refresh_gallery()
-        return (
-            render_reveal(result),
-            render_capsule(result.story),
-            render_full_story(result.story, result.highlight_paragraph_ids),
-            share_markdown,
-            "",
-            gallery_update,
-            gallery_html,
-        )
-    except Exception as exc:
-        return _error_html(exc), "", "", "", fragment, gr.update(), render_gallery(list_story_summaries())
-
-
-def load_from_query(request: gr.Request) -> tuple[str, str, str, str, str, dict[str, Any], str]:
-    gallery_update, gallery_html = refresh_gallery()
-    story_id = ""
-    capsule = ""
-    link = ""
-    try:
-        params = getattr(request, "query_params", None) or {}
-        candidate = params.get("story", "") if hasattr(params, "get") else ""
-        if candidate:
-            story_id = validate_story_id(str(candidate))
-            story = get_story(story_id)
-            capsule = render_capsule(story)
-            link = _share_markdown(_request_base_url(request), story.story_id)
-    except Exception as exc:
-        capsule = _error_html(exc)
-    return story_id, capsule, link, capsule, link, gallery_update, gallery_html
-
-
-def build_app() -> gr.Blocks:
-    with gr.Blocks(title="Blind Quill") as demo:
-        with gr.Column(elem_classes=["app-shell"]):
-            selected_story_id = gr.State("")
-            gr.HTML(
-                "<style>" + APP_CSS + "</style>"
-                """
-                <header class="app-title">
-                  <h1>Blind Quill</h1>
-                  <p>Choose a manuscript, read only its public capsule, add a fragment, and reveal how it is grafted into the hidden canon.</p>
-                </header>
-                """
-            )
-
-            with gr.Tab("Browse Hidden Manuscripts"):
-                gallery_dropdown = gr.Dropdown(label="Choose a manuscript", choices=[], interactive=True)
-                refresh_button = gr.Button("Refresh")
-                gallery_html = gr.HTML()
-                gallery_load_button = gr.Button("Load selected manuscript")
-                browse_capsule = gr.HTML()
-                browse_share = gr.Markdown()
-
-            with gr.Tab("Start a Hidden Manuscript"):
-                seed_input = gr.Textbox(label="Seed", max_lines=5, max_length=500, placeholder="A lighthouse keeper discovers...")
-                create_button = gr.Button("Begin manuscript", variant="primary")
-                created_capsule = gr.HTML()
-                created_story = gr.HTML()
-                created_share = gr.Markdown()
-
-            with gr.Tab("Continue a Hidden Manuscript"):
-                story_id_input = gr.Textbox(label="Story code", placeholder="Paste a story code or open a share link")
-                load_button = gr.Button("Load public capsule")
-                continue_capsule = gr.HTML()
-                continue_share = gr.Markdown()
-                fragment_input = gr.Textbox(
-                    label="Your fragment",
-                    max_lines=5,
-                    max_length=500,
-                    placeholder="Add a secret, object, scene, place, line of dialogue, or strange rule.",
-                )
-                stitch_button = gr.Button("Stitch my fragment", variant="primary")
-                reveal_output = gr.HTML()
-                updated_capsule = gr.HTML()
-                full_story_output = gr.HTML()
-
-            refresh_button.click(refresh_gallery, outputs=[gallery_dropdown, gallery_html])
-            gallery_load_button.click(
-                load_gallery_story,
-                inputs=[gallery_dropdown],
-                outputs=[
-                    story_id_input,
-                    browse_capsule,
-                    browse_share,
-                    continue_capsule,
-                    continue_share,
-                    reveal_output,
-                    full_story_output,
-                ],
-            )
-            create_button.click(
-                create_manuscript,
-                inputs=[seed_input],
-                outputs=[created_capsule, created_story, created_share, selected_story_id, gallery_dropdown, gallery_html],
-            ).then(lambda story_id: story_id, inputs=[selected_story_id], outputs=[story_id_input])
-            load_button.click(
-                load_selected_story,
-                inputs=[story_id_input],
-                outputs=[continue_capsule, continue_share, reveal_output, full_story_output],
-            )
-            stitch_button.click(
-                stitch_fragment,
-                inputs=[story_id_input, fragment_input],
-                outputs=[
-                    reveal_output,
-                    updated_capsule,
-                    full_story_output,
-                    continue_share,
-                    fragment_input,
-                    gallery_dropdown,
-                    gallery_html,
-                ],
-            )
-            demo.load(
-                load_from_query,
-                outputs=[
-                    story_id_input,
-                    continue_capsule,
-                    continue_share,
-                    browse_capsule,
-                    browse_share,
-                    gallery_dropdown,
-                    gallery_html,
-                ],
-            )
-    return demo
-
-
-def _request_base_url(request: gr.Request) -> str:
-    raw = getattr(request, "request", None)
-    if raw is not None and hasattr(raw, "base_url"):
-        return str(raw.base_url).rstrip("/")
-    headers = getattr(request, "headers", {}) or {}
-    host = headers.get("host") if hasattr(headers, "get") else ""
-    if host:
-        proto = headers.get("x-forwarded-proto", "https") if hasattr(headers, "get") else "https"
-        return f"{proto}://{host}"
-    return ""
-
-
-def _share_markdown(base_url: str, story_id: str) -> str:
-    link = share_link(base_url, story_id)
-    if link == story_id:
-        return f"Story code: `{story_id}`"
-    return f"[Share link]({link})"
-
-
-def _error_html(exc: Exception) -> str:
-    if isinstance(exc, (InputValidationError, StoryStoreError, ValueError)):
-        message = str(exc)
-    else:
-        message = "The app hit an internal error. Check the Space logs for details."
+        return call(*args, **kwargs)
+    except gr.Error:
+        raise
+    except _USER_FACING_ERRORS as exc:
+        raise gr.Error(str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001 - last-resort guard for the API layer
         traceback.print_exc()
-    return f'<section class="capsule"><p><strong>Error:</strong> {escape(message)}</p></section>'
+        raise gr.Error("The bindery hit an internal error. Please try again.") from exc
 
 
-demo = build_app().queue(default_concurrency_limit=1)
+def build_server() -> Server:
+    app = Server(title="Blind Quill")
+
+    @app.api(name="list_stories")
+    def list_stories() -> dict:
+        stories = _guard(core.gallery)
+        return {"stories": [card_dict(story) for story in stories]}
+
+    @app.api(name="get_capsule")
+    def get_capsule(story_id: str) -> dict:
+        story = _guard(core.capsule, story_id)
+        return {"story": card_dict(story)}
+
+    @app.api(name="create_story", concurrency_limit=1, concurrency_id="bindery")
+    def create_story(seed: str) -> dict:
+        story = _guard(core.create, seed)
+        return {"story": full_story_dict(story)}
+
+    @app.api(name="stitch", concurrency_limit=1, concurrency_id="bindery")
+    def stitch(story_id: str, fragment: str) -> dict:
+        result = _guard(core.stitch, story_id, fragment)
+        return {"story": full_story_dict(result.story), "reveal": reveal_dict(result)}
+
+    @app.api(name="read_manuscript")
+    def read_manuscript(story_id: str) -> dict:
+        story = _guard(core.read_sealed, story_id)
+        return {"story": full_story_dict(story)}
+
+    app.mount("/web", StaticFiles(directory=str(WEB_DIR)), name="web")
+
+    @app.get("/", response_class=HTMLResponse)
+    def homepage() -> str:
+        return (WEB_DIR / "index.html").read_text(encoding="utf-8")
+
+    return app
 
 
-if __name__ == "__main__":
-    demo.launch()
+def _port() -> int:
+    for key in ("GRADIO_SERVER_PORT", "PORT"):
+        value = os.environ.get(key)
+        if value:
+            try:
+                return int(value)
+            except ValueError:
+                pass
+    return 7860
+
+
+def _should_launch() -> bool:
+    if os.environ.get("BQ_NO_LAUNCH") == "1":
+        return False
+    # Run as a script locally, or imported by the Hugging Face Spaces runtime.
+    return __name__ == "__main__" or bool(os.environ.get("SPACE_ID"))
+
+
+app = build_server()
+
+if _should_launch():
+    app.launch(server_name="0.0.0.0", server_port=_port(), show_error=True)

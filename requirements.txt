@@ -1,4 +1,4 @@
-gradio>=6.0,<7
+gradio>=6.16,<7
 transformers
 accelerate
 safetensors

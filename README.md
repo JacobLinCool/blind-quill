@@ -18,6 +18,23 @@ You do not get to read the whole manuscript before you play. You only see a tiny
 
 It is a hidden-canon editor: every player changes the manuscript without knowing where their contribution will land.
 
+## Interface
+
+The UI is a bespoke literary frontend — "The Invisible Bindery" — that lives in `web/`
+(a React + Babel-in-browser prototype). It is served by a [`gradio.Server`](https://huggingface.co/blog/introducing-gradio-server):
+`app.py` exposes the bindery as queued API endpoints (`list_stories`, `get_capsule`,
+`create_story`, `stitch`, `read_manuscript`) and the frontend calls them through the
+Gradio JS client. This keeps Gradio's queue, concurrency control, and ZeroGPU support
+while running a fully custom UI — a single-surface flow (gallery → capsule → compose →
+reveal → reader) rather than tabs.
+
+The story flow is split across three layers:
+
+- `core.py` — orchestration (create / browse / stitch / read), returning canon objects.
+- `presenter.py` — maps `Story` objects to the frontend's view model (capsules, Roman
+  chapter numerals, illuminated lead paragraphs, the graft ledger, the reveal payload).
+- `app.py` — the `gradio.Server`: static frontend + the queued API endpoints.
+
 ## Run locally
 
 ```bash
@@ -27,7 +44,9 @@ pip install -r requirements.txt
 python app.py
 ```
 
-Set `DATA_DIR=/data` on Hugging Face Spaces when persistent storage is available. If `DATA_DIR` is unset and `/data` does not exist, Blind Quill writes to `./data/stories.json`.
+Then open <http://localhost:7860>. Set `DATA_DIR=/data` on Hugging Face Spaces when
+persistent storage is available. If `DATA_DIR` is unset and `/data` does not exist,
+Blind Quill writes to `./data/stories.json`.
 
 ## Test
 
@@ -35,7 +54,9 @@ Set `DATA_DIR=/data` on Hugging Face Spaces when persistent storage is available
 python -m unittest discover -s tests -v
 ```
 
-The tests cover JSON/thinking cleanup, deterministic patch application, graft sealing, and stale-write rejection. They do not download model weights.
+The tests cover JSON/thinking cleanup, deterministic patch application, graft sealing,
+stale-write rejection, and the create-then-stitch flow (capsule stays blinded, the
+stitch reveals the full manuscript). They do not download model weights.
 
 ## Model policy
 

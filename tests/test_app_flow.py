@@ -2,8 +2,9 @@ import os
 import tempfile
 import unittest
 
-import app
+import core
 import story_store
+from presenter import card_dict, full_story_dict, reveal_dict
 from schemas import (
     CharacterFact,
     FragmentInterpretation,
@@ -17,13 +18,7 @@ from schemas import (
     WorldBible,
     WorldBiblePatch,
 )
-
-
-class DummyRequest:
-    class RawRequest:
-        base_url = "http://testserver/"
-
-    request = RawRequest()
+from utils import InputValidationError
 
 
 def initial_payload():
@@ -90,30 +85,30 @@ def graft_patch():
 
 
 class AppFlowTests(unittest.TestCase):
-    def test_create_load_and_stitch_flow_hides_then_reveals_full_story(self):
+    def test_create_blinds_capsule_then_stitch_reveals_full_story(self):
         original_data_dir = os.environ.get("DATA_DIR")
-        original_story_generate = story_store.generate_json
-        original_app_generate = app.generate_json
+        original_store_generate = story_store.generate_json
+        original_core_generate = core.generate_json
         try:
             with tempfile.TemporaryDirectory() as directory:
                 os.environ["DATA_DIR"] = directory
                 story_store.generate_json = lambda *args, **kwargs: initial_payload()
-                created_capsule, created_story, share_markdown, story_id, *_ = app.create_manuscript(
-                    "A lighthouse seed.",
-                    DummyRequest(),
-                )
 
-                self.assertIn("The Late Glass", created_capsule)
-                self.assertIn("Salt Clock", created_story)
-                self.assertIn(f"?story={story_id}", share_markdown)
+                story = core.create("A lighthouse seed.")
+                story_id = story.story_id
 
-                loaded_capsule, _, reveal, full_story = app.load_selected_story(story_id, DummyRequest())
-                self.assertIn("The Late Glass", loaded_capsule)
-                self.assertNotIn("Salt Clock", loaded_capsule)
-                self.assertEqual(reveal, "")
-                self.assertEqual(full_story, "")
+                # Gallery + capsule are blinded: the public capsule shows, chapters never leak.
+                card = card_dict(story)
+                self.assertEqual(card["capsule"]["title"], "The Late Glass")
+                self.assertNotIn("chapters", card)
+                self.assertTrue(any(item.story_id == story_id for item in core.gallery()))
+                self.assertNotIn("chapters", card_dict(core.capsule(story_id)))
 
-                def fake_app_generate(*args, **kwargs):
+                # An open manuscript cannot be read whole before being changed.
+                with self.assertRaises(InputValidationError):
+                    core.read_sealed(story_id)
+
+                def fake_core_generate(*args, **kwargs):
                     schema_model = args[1]
                     if schema_model is GraftPlan:
                         return graft_plan()
@@ -121,19 +116,27 @@ class AppFlowTests(unittest.TestCase):
                         return graft_patch()
                     raise AssertionError(f"Unexpected schema: {schema_model}")
 
-                app.generate_json = fake_app_generate
-                stitched_reveal, _, stitched_story, _, cleared_fragment, *_ = app.stitch_fragment(
-                    story_id,
-                    "Blue glass reflects one day late.",
-                    DummyRequest(),
-                )
-                self.assertIn("stitched into Chapter 2", stitched_reveal)
-                self.assertIn("graft-highlight", stitched_story)
-                self.assertIn("Lantern Room", stitched_story)
-                self.assertEqual(cleared_fragment, "")
+                core.generate_json = fake_core_generate
+                result = core.stitch(story_id, "Blue glass reflects one day late.")
+
+                full = full_story_dict(result.story)
+                reveal = reveal_dict(result)
+
+                # The stitch unseals the full manuscript and highlights the new passage.
+                self.assertIn("chapters", full)
+                self.assertEqual(full["graftCount"], 1)
+                self.assertTrue(reveal["highlightIds"])
+                highlighted = reveal["highlightIds"][0]
+                paragraph_ids = [p["id"] for chapter in full["chapters"] for p in chapter["paragraphs"]]
+                self.assertIn(highlighted, paragraph_ids)
+                self.assertIn("Chapter 2", reveal["revealLine"])
+                self.assertEqual(reveal["targetLabel"], "Chapter II · Lantern Room")
+
+                # The graft is persisted.
+                self.assertEqual(core.capsule(story_id).graft_count, 1)
         finally:
-            story_store.generate_json = original_story_generate
-            app.generate_json = original_app_generate
+            story_store.generate_json = original_store_generate
+            core.generate_json = original_core_generate
             if original_data_dir is None:
                 os.environ.pop("DATA_DIR", None)
             else:

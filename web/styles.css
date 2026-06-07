@@ -1,0 +1,366 @@
+/* ============================================================
+   BLIND QUILL — "The Invisible Bindery"
+   A bespoke literary design language for a blinded
+   collaborative story-grafting game.
+
+   System in one breath:
+   - TWO VOICES: human manuscript (Spectral serif on paper)
+     vs the invisible editor (IBM Plex Mono marginalia).
+   - TWO WORLDS: Paper (light, reading/writing) and
+     The Dark (deep ink-oxblood, the gallery + reveal).
+   - MOTIFS: bookbinding thread (madder crimson) = every graft;
+     veiling (redacted ink bars) = blinded content;
+     gilt wax = sealed; illuminated drop-caps; folio ledger.
+   ============================================================ */
+
+:root {
+  /* ---- Ink & Paper (warm monochrome spine) ---- */
+  --ink:        #1b160f;   /* primary text on paper */
+  --ink-soft:   #4a4034;   /* secondary text on paper */
+  --ink-faint:  #877a66;   /* meta / muted on paper */
+  --paper:      #ece2cb;   /* base reading surface */
+  --paper-hi:   #f4ecd8;   /* raised paper (cards, inputs) */
+  --paper-edge: #d8caa9;   /* hairline on paper */
+
+  /* ---- The Dark (immersive field) ---- */
+  --dark:       #15110b;   /* deepest field */
+  --dark-2:     #1d1810;   /* raised panel in the dark */
+  --dark-3:     #271f15;   /* card / inset in the dark */
+  --dark-edge:  #3a2f20;   /* hairline in the dark */
+  --bone:       #ede4cf;   /* text on dark */
+  --bone-soft:  #c3b59a;   /* secondary text on dark */
+  --bone-faint: #8a7c63;   /* meta on dark */
+
+  /* ---- The Thread (madder crimson — the graft) ---- */
+  --thread:     #b23a22;
+  --thread-hi:  #cb4a2c;
+  --thread-deep:#8c2c18;
+  --thread-glow: rgba(203, 74, 44, 0.45);
+
+  /* ---- Gilt (rare precious signal — wax, illumination) ---- */
+  --gilt:       #c49a4a;
+  --gilt-hi:    #ddb866;
+  --gilt-deep:  #8f6e2c;
+
+  /* ---- Type ---- */
+  --serif: "Spectral", "Iowan Old Style", Georgia, serif;
+  --mono:  "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* ---- Geometry ---- */
+  --measure: 60ch;        /* reading column */
+  --r-sm: 3px;
+  --r-md: 5px;
+  --r-lg: 10px;
+  --gap: 24px;
+
+  /* ---- Motion ---- */
+  --ease: cubic-bezier(.2, .0, .2, 1);
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
+}
+
+/* ===================== Tweakable themes ===================== */
+/* Default palette is overridden by JS tweaks via inline vars. */
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--dark);
+  color: var(--bone);
+  font-family: var(--serif);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "kern", "liga", "onum";
+}
+
+::selection { background: var(--thread); color: #fff4ec; }
+
+/* Paper grain + dark grain — built from layered gradients (no asset) */
+.bq-grain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: .55;
+  mix-blend-mode: multiply;
+  background-image:
+    radial-gradient(circle at 18% 24%, rgba(90,60,20,.05) 0 1px, transparent 1px),
+    radial-gradient(circle at 62% 71%, rgba(90,60,20,.04) 0 1px, transparent 1px),
+    radial-gradient(circle at 84% 16%, rgba(90,60,20,.04) 0 1px, transparent 1px);
+  background-size: 7px 7px, 11px 11px, 13px 13px;
+}
+
+/* ===================== Type primitives ===================== */
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+}
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.tabular { font-variant-numeric: tabular-nums; }
+.serif-italic { font-style: italic; }
+
+h1, h2, h3, h4 { font-weight: 700; line-height: 1.08; letter-spacing: -0.01em; margin: 0; }
+
+/* ===================== App scaffold ===================== */
+.bq-app { min-height: 100vh; position: relative; isolation: isolate; }
+
+/* World surfaces */
+.world-dark {
+  background:
+    radial-gradient(120% 90% at 50% -10%, #241d12 0%, var(--dark) 46%, #100c07 100%);
+  color: var(--bone);
+}
+.world-paper {
+  background:
+    radial-gradient(140% 120% at 50% -10%, var(--paper-hi) 0%, var(--paper) 55%, #e2d6ba 100%);
+  color: var(--ink);
+}
+
+/* ===================== Top masthead ===================== */
+.masthead {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px clamp(16px, 5vw, 56px);
+  backdrop-filter: blur(8px);
+}
+.masthead.on-dark {
+  background: linear-gradient(180deg, rgba(21,17,11,.92), rgba(21,17,11,.55));
+  border-bottom: 1px solid var(--dark-edge);
+}
+.masthead.on-paper {
+  background: linear-gradient(180deg, rgba(244,236,216,.94), rgba(244,236,216,.5));
+  border-bottom: 1px solid var(--paper-edge);
+}
+
+.wordmark { display: flex; align-items: baseline; gap: 12px; cursor: pointer; user-select: none; }
+.wordmark__name {
+  font-family: var(--serif);
+  font-weight: 800;
+  font-size: 23px;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+.wordmark__name .q {
+  font-style: italic;
+  position: relative;
+  padding-right: 2px;
+}
+.wordmark__name .q::after {
+  /* the ink dot of the quill */
+  content: "";
+  position: absolute;
+  top: -2px; right: -7px;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--thread);
+  box-shadow: 0 0 10px var(--thread-glow);
+}
+.wordmark__sub {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  opacity: .6;
+}
+.on-dark .wordmark__name { color: var(--bone); }
+.on-paper .wordmark__name { color: var(--ink); }
+
+.masthead__nav { display: flex; align-items: center; gap: 8px; }
+
+/* ===================== Buttons ===================== */
+.btn {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  padding: 11px 18px;
+  cursor: pointer;
+  transition: all .2s var(--ease);
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  white-space: nowrap;
+  background: none;
+  line-height: 1;
+}
+.btn:active { transform: translateY(1px); }
+
+.btn--thread {
+  background: var(--thread);
+  color: #fbeee6;
+  border-color: var(--thread);
+  box-shadow: 0 1px 0 var(--thread-deep), 0 8px 24px -12px var(--thread-glow);
+}
+.btn--thread:hover { background: var(--thread-hi); border-color: var(--thread-hi); }
+
+.btn--ghost-dark {
+  color: var(--bone-soft);
+  border-color: var(--dark-edge);
+}
+.btn--ghost-dark:hover { color: var(--bone); border-color: var(--bone-faint); background: rgba(237,228,207,.04); }
+
+.btn--ghost-paper {
+  color: var(--ink-soft);
+  border-color: var(--paper-edge);
+}
+.btn--ghost-paper:hover { color: var(--ink); border-color: var(--ink-faint); background: rgba(27,22,15,.03); }
+
+.btn--ink {
+  background: var(--ink);
+  color: var(--paper-hi);
+  border-color: var(--ink);
+}
+.btn--ink:hover { background: #2c241a; }
+
+.btn--lg { padding: 15px 26px; font-size: 12.5px; }
+.btn--sm { padding: 8px 13px; font-size: 11px; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+
+/* ===================== Badges / chips ===================== */
+.badge {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.badge .dot { width: 6px; height: 6px; border-radius: 50%; }
+.badge--open { background: rgba(196,154,74,.12); color: var(--gilt-hi); border: 1px solid rgba(196,154,74,.3); }
+.badge--open .dot { background: var(--gilt); box-shadow: 0 0 8px rgba(221,184,102,.6); }
+.badge--sealed { background: rgba(178,58,34,.14); color: var(--thread-hi); border: 1px solid rgba(178,58,34,.34); }
+.badge--sealed .dot { background: var(--thread); }
+.on-paper .badge--open { background: rgba(143,110,44,.12); color: var(--gilt-deep); border-color: rgba(143,110,44,.32); }
+.on-paper .badge--sealed { background: rgba(140,44,24,.1); color: var(--thread-deep); border-color: rgba(140,44,24,.28); }
+
+/* ===================== Folio ledger (graft progress) ===================== */
+.ledger { display: inline-flex; align-items: center; gap: 10px; font-family: var(--mono); }
+.ledger__count { font-size: 12px; letter-spacing: 0.1em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ledger__track { flex: none; }
+.ledger__track {
+  width: 86px; height: 5px; border-radius: 999px;
+  background: rgba(138,124,99,.25);
+  overflow: hidden;
+  position: relative;
+}
+.ledger__fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--gilt-deep), var(--gilt-hi)); transition: width .6s var(--ease-out); }
+.ledger--sealed .ledger__fill { background: linear-gradient(90deg, var(--thread-deep), var(--thread)); }
+
+/* ===================== Veiled (blinded) text ===================== */
+.veil { display: block; }
+.veil__bar {
+  height: 0.66em;
+  margin: 0.5em 0;
+  border-radius: 2px;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(138,124,99,.4) 0 18px,
+    rgba(138,124,99,.18) 18px 26px
+  );
+  filter: blur(.4px);
+}
+.on-paper .veil__bar {
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(135,122,102,.38) 0 18px,
+    rgba(135,122,102,.16) 18px 26px
+  );
+}
+
+/* ===================== Generic page container ===================== */
+.page { max-width: 1180px; margin: 0 auto; padding: clamp(24px, 5vw, 56px); }
+.page--narrow { max-width: 760px; }
+
+/* ===================== Inputs ===================== */
+.field { display: block; }
+.field__label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  display: block;
+  margin-bottom: 10px;
+}
+.world-dark .field__label { color: var(--bone-faint); }
+.field textarea, .field input[type="text"] {
+  width: 100%;
+  font-family: var(--serif);
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--ink);
+  background: var(--paper-hi);
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--r-lg);
+  padding: 18px 20px;
+  resize: vertical;
+  transition: border-color .2s var(--ease), box-shadow .2s var(--ease);
+}
+.field textarea::placeholder, .field input::placeholder { color: var(--ink-faint); opacity: .7; font-style: italic; }
+.field textarea:focus, .field input:focus {
+  outline: none;
+  border-color: var(--thread);
+  box-shadow: 0 0 0 4px var(--thread-glow);
+}
+.field__count { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); text-align: right; margin-top: 8px; letter-spacing: .08em; }
+
+/* ===================== Animations ===================== */
+@keyframes fadeUp { from { transform: translateY(16px); } to { transform: none; } }
+@keyframes fadeIn { from { opacity: .35; } to { opacity: 1; } }
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  48% { opacity: .92; }
+  50% { opacity: .78; }
+  52% { opacity: .95; }
+}
+@keyframes drawStitch { from { stroke-dashoffset: var(--len); } to { stroke-dashoffset: 0; } }
+@keyframes glowPulse {
+  0% { box-shadow: 0 0 0 0 var(--thread-glow); }
+  60% { box-shadow: 0 0 40px 6px var(--thread-glow); }
+  100% { box-shadow: 0 0 0 0 rgba(203,74,44,0); }
+}
+@keyframes spinSlow { to { transform: rotate(360deg); } }
+@keyframes typeBlink { 50% { opacity: 0; } }
+
+.stagger > * { animation: fadeUp .6s var(--ease-out); }
+.stagger > *:nth-child(1) { animation-delay: .05s; }
+.stagger > *:nth-child(2) { animation-delay: .12s; }
+.stagger > *:nth-child(3) { animation-delay: .19s; }
+.stagger > *:nth-child(4) { animation-delay: .26s; }
+.stagger > *:nth-child(5) { animation-delay: .33s; }
+.stagger > *:nth-child(6) { animation-delay: .40s; }
+.stagger > *:nth-child(7) { animation-delay: .47s; }
+.stagger > *:nth-child(8) { animation-delay: .54s; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, .stagger > * { animation-duration: .001ms !important; animation-delay: 0s !important; transition-duration: .001ms !important; }
+}
+
+/* ===================== Responsive ===================== */
+@media (max-width: 600px) {
+  .masthead { padding: 14px 18px; }
+  .wordmark__sub { display: none; }
+  .wordmark__name { font-size: 20px; }
+  .field textarea, .field input[type="text"] { font-size: 16px; padding: 15px 16px; }
+}
+@media (max-width: 480px) {
+  .btn { padding: 10px 14px; font-size: 11px; }
+  .btn--lg { padding: 13px 18px; }
+}
